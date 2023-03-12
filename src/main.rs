@@ -1,8 +1,9 @@
 use chrono::Utc;
-use std::{fs::OpenOptions, io::Write};
+use std::{fs::OpenOptions, io::Write, process::Command};
 
 const QPFILE: &str = "/tmp/exam.tex";
 const MSFILE: &str = "/tmp/marking.tex";
+const OUT_DIR: &str = "/tmp";
 
 const INSTRUCTIONS: &str = "Answer the questions in the rust programming language.
 Make sure your program follows the input and output
@@ -89,13 +90,21 @@ Enter the scale you want to convert TO (F, C): C
     format!("{}\n{}", q1, q2)
 }
 
-fn render_latex(filename: &str, content: &str) {
+fn render_latex(latexname: &str, out_dir: &str, content: &str) {
     let mut f = OpenOptions::new()
         .create(true)
         .write(true)
-        .open(filename)
+        .open(latexname)
         .expect("Unable to open file for writing.");
     write!(f, "{}", content).expect("Unable to write to file.");
+    f.flush().expect("Unable to flush.");
+
+    Command::new("pdflatex")
+        .arg("-output-directory")
+        .arg(out_dir)
+        .arg(format!("\"{}\"", latexname))
+        .status()
+        .expect("Unable to execute latex renderer");
 }
 
 fn main() {
@@ -112,6 +121,6 @@ fn main() {
 
     let exam = d.replace("MODE", "12pt, addpoints");
     let marking = d.replace("MODE", "12pt, answers");
-    render_latex(QPFILE, &exam);
-    render_latex(MSFILE, &marking);
+    render_latex(QPFILE, OUT_DIR, &exam);
+    render_latex(MSFILE, OUT_DIR, &marking);
 }
