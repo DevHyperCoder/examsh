@@ -1,3 +1,117 @@
+use chrono::Utc;
+use std::{fs::OpenOptions, io::Write};
+
+const QPFILE: &str = "/tmp/exam.tex";
+const MSFILE: &str = "/tmp/marking.tex";
+
+const INSTRUCTIONS: &str = "Answer the questions in the rust programming language.
+Make sure your program follows the input and output
+text given in the question.";
+
+const COURSE: &str = "EXAMSH";
+const TEST_NAME: &str = "Basic Test";
+
+struct MultipleChoiceQuestions<'a> {
+    question: &'a str,
+    answers: Vec<&'a str>,
+    correct_id: usize,
+}
+
+impl<'a> MultipleChoiceQuestions<'a> {
+    fn render(&self) -> String {
+        let choices = self
+            .answers
+            .iter()
+            .enumerate()
+            .map(|(id, ans)| {
+                let ch = if self.correct_id == id {
+                    "\\correctchoice "
+                } else {
+                    "\\choice "
+                };
+
+                format!("{} {}", ch, ans)
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        format!(
+            "
+\\question
+{}
+\\begin{{choices}}
+{}
+\\end{{choices}}
+        ",
+            self.question, choices
+        )
+    }
+}
+
+struct WriteCode<'a> {
+    question: &'a str,
+    output: &'a str,
+}
+
+impl<'a> WriteCode<'a> {
+    fn render(&self) -> String {
+        format!(
+            "
+\\question
+{}
+
+The output should exactly match what is given below:
+\\begin{{verbatim}}
+{}
+\\end{{verbatim}}
+            ",
+            self.question, self.output
+        )
+    }
+}
+
+fn generate_questions() -> String {
+    let q1 = MultipleChoiceQuestions {
+        question: "What language is \\verb|examsh| written in ?",
+        answers: vec!["C Plus Plus", "Rust"],
+        correct_id: 1,
+    }
+    .render();
+    let q2 = WriteCode {
+        question: "Write a program to convert between the various temperature ranges (\\degree C, \\degree F and Kelvin).",
+        output: "
+Temperature Converter
+Enter the scale you want to convert FROM (K, F, C): K
+Enter the temperature in Kelvin: 300
+Enter the scale you want to convert TO (F, C): C
+300 K is 26.85 C"
+    }.render();
+    format!("{}\n{}", q1, q2)
+}
+
+fn render_latex(filename: &str, content: &str) {
+    let mut f = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open(filename)
+        .expect("Unable to open file for writing.");
+    write!(f, "{}", content).expect("Unable to write to file.");
+}
+
 fn main() {
     println!("examsh");
+
+    let today = Utc::now().format("%d %B %Y").to_string();
+
+    let d = include_str!("./base_doc.tex")
+        .replace("COURSE", COURSE)
+        .replace("TEST_NAME", TEST_NAME)
+        .replace("INSTRUCTIONS", INSTRUCTIONS)
+        .replace("DATE", &today)
+        .replace("QUESTIONS", generate_questions().as_str());
+
+    let exam = d.replace("MODE", "12pt, addpoints");
+    let marking = d.replace("MODE", "12pt, answers");
+    render_latex(QPFILE, &exam);
+    render_latex(MSFILE, &marking);
 }
