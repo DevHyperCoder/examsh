@@ -12,6 +12,13 @@ text given in the question.";
 const COURSE: &str = "EXAMSH";
 const TEST_NAME: &str = "Basic Test";
 
+fn wrap_in_code_blocks(s: &str) -> String {
+    format!("\\begin{{verbatim}}
+{}
+\\end{{verbatim}}", s)
+
+}
+
 struct PredictOutput<'a> {
     question: &'a str,
     code: Vec<(&'a str, &'a str)>,
@@ -42,11 +49,9 @@ impl<'a> PredictOutput<'a> {
                 format!(
                     "
 \\textbf{{{}}}
-\\begin{{verbatim}}
 {}
-\\end{{verbatim}}
 ",
-                    fname, code
+                    fname, wrap_in_code_blocks(code)
                 )
             })
             .collect::<Vec<String>>()
@@ -67,14 +72,12 @@ Code:
 {}
 
 \\begin{{solution}}
-\\begin{{verbatim}}
 {}
-\\end{{verbatim}}
 \\end{{solution}}
 ",
                 self.question,
                 code,
-                output.unwrap()
+                wrap_in_code_blocks(output.unwrap().as_str())
             )
         }
     }
@@ -130,11 +133,8 @@ impl<'a> WriteCode<'a> {
 {}
 
 The output should exactly match what is given below:
-\\begin{{verbatim}}
-{}
-\\end{{verbatim}}
-            ",
-            self.question, self.output
+{}",
+            self.question, wrap_in_code_blocks(self.output)
         )
     }
 }
