@@ -9,14 +9,18 @@ const INSTRUCTIONS: &str = "Answer the questions in the rust programming languag
 Make sure your program follows the input and output
 text given in the question.";
 
+const MARKING_INSTRUCTIONS: &str = "Please follow the marking scheme strictly.";
+
 const COURSE: &str = "EXAMSH";
 const TEST_NAME: &str = "Basic Test";
 
 fn wrap_in_code_blocks(s: &str) -> String {
-    format!("\\begin{{verbatim}}
+    format!(
+        "\\begin{{verbatim}}
 {}
-\\end{{verbatim}}", s)
-
+\\end{{verbatim}}",
+        s
+    )
 }
 
 struct PredictOutput<'a> {
@@ -51,7 +55,8 @@ impl<'a> PredictOutput<'a> {
 \\textbf{{{}}}
 {}
 ",
-                    fname, wrap_in_code_blocks(code)
+                    fname,
+                    wrap_in_code_blocks(code)
                 )
             })
             .collect::<Vec<String>>()
@@ -134,7 +139,8 @@ impl<'a> WriteCode<'a> {
 
 The output should exactly match what is given below:
 {}",
-            self.question, wrap_in_code_blocks(self.output)
+            self.question,
+            wrap_in_code_blocks(self.output)
         )
     }
 }
@@ -213,6 +219,7 @@ fn main() {
     let d = include_str!("./base_doc.tex")
         .replace("COURSE", COURSE)
         .replace("TEST_NAME", TEST_NAME)
+        .replace("MARKINGINSTRUCTIONS", MARKING_INSTRUCTIONS)
         .replace("INSTRUCTIONS", INSTRUCTIONS)
         .replace("DATE", &today)
         .replace("QUESTIONS", generate_questions().as_str());

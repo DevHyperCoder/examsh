@@ -3,12 +3,15 @@
 \usepackage{gensymb}
 
 \begin{document}
-\header{COURSE}{TEST_NAME}{DATE}
+\header{COURSE}{TEST_NAME \ifprintanswers (MARKING SCHEME) \else\fi}{DATE}
 
 \begin{center}
 \fbox{\fbox{\parbox{5.5in}{\centering
+\ifprintanswers
+MARKINGINSTRUCTIONS
+\else
 INSTRUCTIONS
-    }}}
+\fi}}}
 \end{center}
 
 \begin{questions}
