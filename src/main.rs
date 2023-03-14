@@ -1,18 +1,163 @@
 use chrono::Utc;
-use std::{fs::OpenOptions, io::Write, path::PathBuf, process::Command};
+use serde::Deserialize;
+use std::{
+    fs::{self, File, OpenOptions},
+    io::{Read, Write},
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 const QPFILE: &str = "/tmp/exam.tex";
 const MSFILE: &str = "/tmp/marking.tex";
 const OUT_DIR: &str = "/tmp";
 
-const INSTRUCTIONS: &str = "Answer the questions in the rust programming language.
-Make sure your program follows the input and output
-text given in the question.";
+#[derive(Deserialize)]
+struct ExamSchema {
+    course_name: String,
+    test_name: String,
+    instructions: String,
+    marking_instructions: String,
+    date_fmt: Option<String>,
+}
 
-const MARKING_INSTRUCTIONS: &str = "Please follow the marking scheme strictly.";
+#[derive(Deserialize)]
+enum QuestionType {
+    MultipleChoiceQuestion,
+    PredictOutput,
+    WriteCode,
+    Raw,
+}
 
-const COURSE: &str = "EXAMSH";
-const TEST_NAME: &str = "Basic Test";
+#[derive(Deserialize)]
+struct QuestionSchema {
+    qtype: QuestionType,
+    question: serde_json::Value,
+}
+
+struct Exam {
+    exam_schema: ExamSchema,
+
+    questions: Vec<Box<dyn Question>>,
+}
+
+impl Exam {
+    fn from_exam_file(fname: &str) -> Exam {
+        let mut f = File::open(fname).expect("Unable to open exam file");
+        let mut content = String::new();
+        f.read_to_string(&mut content)
+            .expect("Unable to read exam file");
+        let exam_schema: ExamSchema =
+            serde_json::from_str(&content).expect("Unable to parse exam file");
+
+        // TODO This code makes an assumptions that the questions for this exam are present in a
+        // subfolder called "questions".
+        // - Only 1 level deep questions are supported and that too for PredictOutput questions.
+        // - recursive questions are not supported.
+
+        let mut questions_path = PathBuf::from(fname);
+        questions_path.pop(); // pop file name
+        questions_path.push("questions");
+
+        let mut questions = vec![];
+        for dir in fs::read_dir(&questions_path).expect("Unable to read questions directory") {
+            let a = dir.expect("Unable to get dir entry");
+            if !a.path().is_file() {
+                continue;
+            }
+            if a.path().extension().expect("Cant get extension") != "json" {
+                continue;
+            }
+
+            let mut qf = File::open(a.path()).expect("Unable to open question file");
+            let mut qcontent = String::new();
+            qf.read_to_string(&mut qcontent)
+                .expect("Unable to read question file");
+
+            let question_schema: QuestionSchema =
+                serde_json::from_str(&qcontent).expect("Unable to parse question file.");
+            let question: Box<dyn Question> = match question_schema.qtype {
+                QuestionType::PredictOutput => {
+                    let mut predict =
+                        serde_json::from_value::<PredictOutput>(question_schema.question)
+                            .expect("Unable to parse PredictOutput Question");
+
+                    let codes = predict
+                        .code_files
+                        .iter()
+                        .map(|code_fname| {
+                            let mut asdf = questions_path.clone();
+                            asdf.push(code_fname);
+                            let mut f = File::open(asdf).expect("Unable to open code file.");
+                            let mut fc = String::new();
+                            f.read_to_string(&mut fc).expect("Unable to read file");
+                            (code_fname.to_string(), fc)
+                        })
+                        .collect::<Vec<(String, String)>>();
+
+                    predict.code = codes;
+                    Box::new(predict)
+                }
+
+                QuestionType::MultipleChoiceQuestion => Box::new(
+                    serde_json::from_value::<MultipleChoiceQuestions>(question_schema.question)
+                        .expect("Unable to parse MultipleChoiceQuestion Question"),
+                ),
+                QuestionType::WriteCode => {
+                    eprintln!("Code test harness is not yet finalised.");
+                    Box::new(
+                        serde_json::from_value::<WriteCode>(question_schema.question)
+                            .expect("Unable to parse WriteCode Question"),
+                    )
+                }
+                QuestionType::Raw => Box::new(
+                    serde_json::from_value::<Raw>(question_schema.question)
+                        .expect("Unable to parse Raw Question"),
+                ),
+            };
+            questions.push(question);
+        }
+
+        Exam {
+            exam_schema,
+            questions,
+        }
+    }
+    fn make_exam(&self) {
+        let today = Utc::now()
+            .format(
+                &(self
+                    .exam_schema
+                    .date_fmt
+                    .clone()
+                    .unwrap_or_else(|| "%d %B %Y".to_string())),
+            )
+            .to_string();
+
+        let d = include_str!("./base_doc.tex")
+            .replace("COURSE", &self.exam_schema.course_name)
+            .replace("TEST_NAME", &self.exam_schema.test_name)
+            .replace(
+                "MARKINGINSTRUCTIONS",
+                &self.exam_schema.marking_instructions,
+            )
+            .replace("INSTRUCTIONS", &self.exam_schema.instructions)
+            .replace("DATE", &today)
+            .replace("QUESTIONS", self.generate_questions().as_str());
+
+        let exam = d.replace("MODE", "12pt, addpoints");
+        let marking = d.replace("MODE", "12pt, answers");
+        render_latex(QPFILE, OUT_DIR, &exam);
+        render_latex(MSFILE, OUT_DIR, &marking);
+    }
+
+    fn generate_questions(&self) -> String {
+        self.questions
+            .iter()
+            .map(|q| q.render())
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+}
 
 fn wrap_in_code_blocks(s: &str) -> String {
     format!(
@@ -23,13 +168,37 @@ fn wrap_in_code_blocks(s: &str) -> String {
     )
 }
 
-struct PredictOutput<'a> {
-    question: &'a str,
-    code: Vec<(&'a str, &'a str)>,
-    run_cmd: fn(PathBuf) -> Result<String, String>,
+trait Question {
+    fn render(&self) -> String;
 }
 
-impl<'a> PredictOutput<'a> {
+#[derive(Deserialize)]
+struct Raw {
+    latex: String,
+}
+impl Question for Raw {
+    fn render(&self) -> String {
+        format!(
+            "\\question
+{}",
+            self.latex
+        )
+    }
+}
+
+#[derive(Deserialize)]
+struct PredictOutput {
+    question: String,
+    pre_run: String,
+    run: String,
+    post_run: String,
+    code_files: Vec<String>,
+
+    #[serde(skip)]
+    code: Vec<(String, String)>,
+}
+
+impl Question for PredictOutput {
     fn render(&self) -> String {
         let mut temp_dir = std::env::temp_dir();
         temp_dir.push(format!("examsh-{}", Utc::now()));
@@ -47,7 +216,6 @@ impl<'a> PredictOutput<'a> {
                     .open(asdf)
                     .expect("Unable to open file");
                 write!(f, "{}", code).expect("Unable to write to file");
-                println!("done");
                 f.flush().expect("Unable to flush");
 
                 format!(
@@ -62,13 +230,31 @@ impl<'a> PredictOutput<'a> {
             .collect::<Vec<String>>()
             .join("\n");
 
-        let output = (self.run_cmd)(temp_dir);
-        if output.is_err() {
-            eprintln!("[CODE RUNNER] Error occured.");
-            "ERROR".to_string()
-        } else {
-            format!(
-                "
+        // TODO: The command runner is specific to *nix (atleast those that have /bin/sh).
+        // Need to figure out a way to make it platform indep.
+
+        Command::new("/bin/sh")
+            .arg("-c")
+            .arg(&self.pre_run)
+            .current_dir(&temp_dir)
+            .status()
+            .expect("Unable to run pre_cmd");
+
+        let output = Command::new(&self.run)
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Unable to run program");
+        let output = String::from_utf8(output.stdout).expect("Unable to get output");
+
+        Command::new("/bin/sh")
+            .arg("-c")
+            .arg(&self.post_run)
+            .current_dir(&temp_dir)
+            .status()
+            .expect("Unable to run post_cmd");
+
+        format!(
+            "
 \\question
 {}
 
@@ -80,21 +266,21 @@ Code:
 {}
 \\end{{solution}}
 ",
-                self.question,
-                code,
-                wrap_in_code_blocks(output.unwrap().as_str())
-            )
-        }
+            self.question,
+            code,
+            wrap_in_code_blocks(output.as_str())
+        )
     }
 }
 
-struct MultipleChoiceQuestions<'a> {
-    question: &'a str,
-    answers: Vec<&'a str>,
+#[derive(Deserialize)]
+struct MultipleChoiceQuestions {
+    question: String,
+    answers: Vec<String>,
     correct_id: usize,
 }
 
-impl<'a> MultipleChoiceQuestions<'a> {
+impl Question for MultipleChoiceQuestions {
     fn render(&self) -> String {
         let choices = self
             .answers
@@ -125,12 +311,13 @@ impl<'a> MultipleChoiceQuestions<'a> {
     }
 }
 
-struct WriteCode<'a> {
-    question: &'a str,
-    output: &'a str,
+#[derive(Deserialize)]
+struct WriteCode {
+    question: String,
+    output: String,
 }
 
-impl<'a> WriteCode<'a> {
+impl Question for WriteCode {
     fn render(&self) -> String {
         format!(
             "
@@ -140,58 +327,9 @@ impl<'a> WriteCode<'a> {
 The output should exactly match what is given below:
 {}",
             self.question,
-            wrap_in_code_blocks(self.output)
+            wrap_in_code_blocks(&self.output)
         )
     }
-}
-
-fn generate_questions() -> String {
-    let q1 = MultipleChoiceQuestions {
-        question: "What language is \\verb|examsh| written in ?",
-        answers: vec!["C Plus Plus", "Rust"],
-        correct_id: 1,
-    }
-    .render();
-    let q2 = WriteCode {
-        question: "Write a program to convert between the various temperature ranges (\\degree C, \\degree F and Kelvin).",
-        output: "
-Temperature Converter
-Enter the scale you want to convert FROM (K, F, C): K
-Enter the temperature in Kelvin: 300
-Enter the scale you want to convert TO (F, C): C
-300 K is 26.85 C"
-    }.render();
-    let q3 = PredictOutput {
-        question: "Find out output",
-        code: vec![(
-            "main.rs",
-            "
-fn main() {
-    println!(\"Hello World!\");
-}
-",
-        )],
-        run_cmd: |a| {
-            let mut path = a.clone();
-            path.push("main.rs");
-
-            Command::new("rustc")
-                .arg(path.to_string_lossy().to_string())
-                .arg(format!("--out-dir={}", a.to_string_lossy()))
-                .status()
-                .expect("Unable to compile rust code.");
-
-            path.pop();
-            path.push("main");
-
-            let o = Command::new(path).output().expect("Unable to run command");
-
-            let s = String::from_utf8(o.stdout).expect("Unexpected output from code.");
-            Ok(s)
-        },
-    }
-    .render();
-    format!("{}\n{}\n{}", q1, q2, q3)
 }
 
 fn render_latex(latexname: &str, out_dir: &str, content: &str) {
@@ -207,25 +345,12 @@ fn render_latex(latexname: &str, out_dir: &str, content: &str) {
         .arg("-output-directory")
         .arg(out_dir)
         .arg(format!("\"{}\"", latexname))
+        .stdout(Stdio::null())
         .status()
         .expect("Unable to execute latex renderer");
 }
 
 fn main() {
-    println!("examsh");
-
-    let today = Utc::now().format("%d %B %Y").to_string();
-
-    let d = include_str!("./base_doc.tex")
-        .replace("COURSE", COURSE)
-        .replace("TEST_NAME", TEST_NAME)
-        .replace("MARKINGINSTRUCTIONS", MARKING_INSTRUCTIONS)
-        .replace("INSTRUCTIONS", INSTRUCTIONS)
-        .replace("DATE", &today)
-        .replace("QUESTIONS", generate_questions().as_str());
-
-    let exam = d.replace("MODE", "12pt, addpoints");
-    let marking = d.replace("MODE", "12pt, answers");
-    render_latex(QPFILE, OUT_DIR, &exam);
-    render_latex(MSFILE, OUT_DIR, &marking);
+    let ex = Exam::from_exam_file("/tmp/asdf/exam.json");
+    ex.make_exam();
 }
