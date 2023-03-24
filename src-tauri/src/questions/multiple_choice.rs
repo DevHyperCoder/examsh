@@ -1,7 +1,7 @@
 use crate::questions::Question;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize,Serialize)]
+#[derive(Clone, Debug,Deserialize,Serialize)]
 pub struct MultipleChoiceQuestions {
     pub question: String,
     pub answers: Vec<String>,

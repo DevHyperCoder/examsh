@@ -4,7 +4,7 @@ use chrono::Utc;
 use serde::{Serialize,Deserialize};
 use std::{fs::OpenOptions, io::Write, process::Command};
 
-#[derive(Deserialize,Serialize)]
+#[derive(Clone,Debug,Deserialize,Serialize)]
 pub struct PredictOutput {
     pub question: String,
     pub pre_run: String,

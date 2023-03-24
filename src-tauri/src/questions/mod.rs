@@ -8,7 +8,7 @@ pub use multiple_choice::MultipleChoiceQuestions;
 pub use predict_output::PredictOutput;
 pub use write_code::WriteCode;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug,Serialize, Deserialize)]
 #[serde(tag = "qtype")]
 pub enum Question {
     RawQuestion(Raw),
@@ -28,7 +28,7 @@ impl Question {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone,Debug,Deserialize, Serialize)]
 pub struct Raw {
     latex: String,
 }

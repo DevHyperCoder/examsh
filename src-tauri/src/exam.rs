@@ -17,7 +17,7 @@ const QPFILE: &str = "/tmp/exam.tex";
 const MSFILE: &str = "/tmp/marking.tex";
 const OUT_DIR: &str = "/tmp";
 
-#[derive(Deserialize,Serialize)]
+#[derive(Clone,Debug,Deserialize,Serialize)]
 pub struct ExamSchema {
     pub course_name: String,
     pub test_name: String,
@@ -34,15 +34,17 @@ enum QuestionType {
     Raw,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Debug,Serialize)]
 pub struct Exam {
     exam_schema: ExamSchema,
-
     questions: Vec<Question>,
 }
 
 impl Exam {
-    pub fn create_exam(exam_schema: ExamSchema, dir: &PathBuf) -> Result<(), ExamshError> {
+    pub fn get_identifier(&self) -> String {
+        format!("{}${}",self.exam_schema.course_name, self.exam_schema.test_name)
+    }
+    pub fn create_exam(exam_schema: ExamSchema, dir: &PathBuf) -> Result<Exam, ExamshError> {
         let mut d = dir.clone();
         d.push("exam.json");
         match File::create(&d) {
@@ -58,7 +60,10 @@ impl Exam {
                                 d.push("questions");
                                 match fs::create_dir(&d) {
                                     Err(_) => Err(ExamshError::Unexpected(format!("Unable to create questions directory at: {}", d.display()))),
-                                    Ok(_) => Ok(())
+                                    Ok(_) => Ok(Exam {
+                                        questions: vec![],
+                                        exam_schema
+                                    })
                                 }
 
                             }

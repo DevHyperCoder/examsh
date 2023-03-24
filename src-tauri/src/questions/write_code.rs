@@ -1,7 +1,7 @@
 use crate::{questions::Question, utils::wrap_in_code_blocks};
 use serde::{Serialize,Deserialize};
 
-#[derive(Deserialize,Serialize)]
+#[derive(Clone,Debug,Deserialize,Serialize)]
 pub struct WriteCode {
     question: String,
     output: String,

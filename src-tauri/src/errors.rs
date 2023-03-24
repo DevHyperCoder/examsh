@@ -2,6 +2,7 @@ use std::{path::PathBuf, fmt::Display};
 
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug)]
 pub enum ExamshError {
     OpenFile(PathBuf),
     CreateFile(PathBuf),
@@ -14,6 +15,8 @@ pub enum ExamshError {
     NoExamFileFound(PathBuf),
 
     ParseExamFile(String,PathBuf),
+
+    NotInCache(),
 
     Unexpected(String),
 }
@@ -32,6 +35,8 @@ impl Display for ExamshError {
             ExamshError::ParseExamFile(ftype,path) => format!("Unable to parse {} file: {}",ftype, path.display()),
 
             ExamshError::NoExamFileFound(path) => format!("No exam file found at {}", path.display()),
+
+            ExamshError::NotInCache() => format!("Exam was not found."),
 
             ExamshError::Unexpected(msg) => format!("Unexpected error: {}", msg),
 

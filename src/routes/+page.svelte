@@ -13,9 +13,9 @@ async function loadExam() {
 
     if (!directory) {str = "No directory chosen."; return;}
     try{
-        val = JSON.stringify(await invoke("load_exam", {
+        val = await invoke("load_exam", {
             directory,
-        }))
+        })
         str = ""
     } catch(e) {
             str =(e as any)
@@ -24,12 +24,14 @@ async function loadExam() {
 }
 
 let str = ""
-let val = ""
+let val:any = []
 
 </script>
 
 <h1>Welcome to examsh</h1>
 <a href="/index"> index</a>
+
+<a href="/exam/{val[1] || '404'}">Go to exam</a>
 
 <button on:click={loadExam}>Load existing exam</button>
 <pre>
