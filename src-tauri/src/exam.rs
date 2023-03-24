@@ -1,31 +1,32 @@
 use std::{
     fs::{self, File},
-    io::Read,
+    io::{Read,Write},
     path::PathBuf,
 };
 
 use chrono::Utc;
-use serde::Deserialize;
+use serde::{Serialize,Deserialize};
 
 use crate::{
-    questions::{MultipleChoiceQuestions, PredictOutput, Question, Raw, WriteCode},
+    questions::Question,
     utils::render_latex,
+    errors:: ExamshError
 };
 
 const QPFILE: &str = "/tmp/exam.tex";
 const MSFILE: &str = "/tmp/marking.tex";
 const OUT_DIR: &str = "/tmp";
 
-#[derive(Deserialize)]
-struct ExamSchema {
-    course_name: String,
-    test_name: String,
-    instructions: String,
-    marking_instructions: String,
-    date_fmt: Option<String>,
+#[derive(Deserialize,Serialize)]
+pub struct ExamSchema {
+    pub course_name: String,
+    pub test_name: String,
+    pub instructions: String,
+    pub marking_instructions: String,
+    pub date_fmt: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 enum QuestionType {
     MultipleChoiceQuestion,
     PredictOutput,
@@ -33,26 +34,66 @@ enum QuestionType {
     Raw,
 }
 
-#[derive(Deserialize)]
-struct QuestionSchema {
-    qtype: QuestionType,
-    question: serde_json::Value,
-}
-
+#[derive(Serialize)]
 pub struct Exam {
     exam_schema: ExamSchema,
 
-    questions: Vec<Box<dyn Question>>,
+    questions: Vec<Question>,
 }
 
 impl Exam {
-    pub fn from_exam_file(fname: &str) -> Exam {
-        let mut f = File::open(fname).expect("Unable to open exam file");
+    pub fn create_exam(exam_schema: ExamSchema, dir: &PathBuf) -> Result<(), ExamshError> {
+        let mut d = dir.clone();
+        d.push("exam.json");
+        match File::create(&d) {
+            Err(_) => Err(ExamshError::CreateFile(d)),
+            Ok(mut f) => {
+
+                
+                match serde_json::to_string_pretty(&exam_schema) {
+                    Ok(s) => 
+                        match write!(f,"{}", s) {
+                            Ok(_) => {
+                                d.pop();
+                                d.push("questions");
+                                match fs::create_dir(&d) {
+                                    Err(_) => Err(ExamshError::Unexpected(format!("Unable to create questions directory at: {}", d.display()))),
+                                    Ok(_) => Ok(())
+                                }
+
+                            }
+                            Err(_) => {
+                                Err(ExamshError::WriteFile(d))
+                            }
+                    }, Err(_) => {
+                        Err(ExamshError::Unexpected(format!("Unable to make exam file.")))
+                    }
+                }
+            }
+        }
+    }
+    pub fn from_exam_file(fname: PathBuf) -> Result<Exam,ExamshError> {
+        let mut f = match File::open(&fname){
+Ok(f) => f,
+Err(_) => {
+    return Err(ExamshError::OpenFile(fname))
+}};
+
         let mut content = String::new();
-        f.read_to_string(&mut content)
-            .expect("Unable to read exam file");
+        match f.read_to_string(&mut content) {
+            Err(_) => {return Err(ExamshError::ReadFile(fname))},
+            Ok(_) => {}
+        };
+
         let exam_schema: ExamSchema =
-            serde_json::from_str(&content).expect("Unable to parse exam file");
+        match
+            serde_json::from_str(&content) {
+                Err(e) => {
+                    println!("{:?}", e);
+                    return Err(ExamshError::ParseExamFile("exam".into(), fname))
+                },
+                Ok(s) => s
+            };
 
         // TODO This code makes an assumptions that the questions for this exam are present in a
         // subfolder called "questions".
@@ -64,28 +105,43 @@ impl Exam {
         questions_path.push("questions");
 
         let mut questions = vec![];
-        for dir in fs::read_dir(&questions_path).expect("Unable to read questions directory") {
-            let a = dir.expect("Unable to get dir entry");
+        let dir_content =match fs::read_dir(&questions_path) {
+            Err(_) => {return Err(ExamshError::Unexpected(format!("Unable to read questions directory: {}", questions_path.display())))}
+            Ok(e) => e
+        };
+
+        for dir in dir_content {
+            let a = match dir{
+                Err(_) => return Err(ExamshError::Unexpected(format!("Unable to get directory entires of {}", questions_path.display()))),
+                Ok(a) => a
+            };
             if !a.path().is_file() {
                 continue;
             }
-            if a.path().extension().expect("Cant get extension") != "json" {
+            let path = a.path();
+            let e = path.extension();
+            let ext = match  e{
+                Some(ext) => ext, 
+                None => return Err(ExamshError::Unexpected(format!("Can not get file extension for {}", a.path().to_string_lossy())))
+            };
+            if ext  != "json" {
                 continue;
             }
 
-            let mut qf = File::open(a.path()).expect("Unable to open question file");
+            let mut qf = match File::open(a.path()) {Ok(f) => f, Err(_) => return Err(ExamshError::OpenFile(a.path()))};
+
             let mut qcontent = String::new();
-            qf.read_to_string(&mut qcontent)
-                .expect("Unable to read question file");
+            match qf.read_to_string(&mut qcontent) {
+                Err(_) => return Err(ExamshError::ReadFile(a.path())),
+                Ok(c) => c
+            };
 
-            let question_schema: QuestionSchema =
-                serde_json::from_str(&qcontent).expect("Unable to parse question file.");
-            let question: Box<dyn Question> = match question_schema.qtype {
-                QuestionType::PredictOutput => {
-                    let mut predict =
-                        serde_json::from_value::<PredictOutput>(question_schema.question)
-                            .expect("Unable to parse PredictOutput Question");
-
+            let q:Question = match serde_json::from_str(&qcontent) {
+                Err(_) => return Err(ExamshError::ParseExamFile("question".into(), a.path())),
+                Ok(q) => q
+            };
+            let question: Question = match q  {
+                Question::PredictOutputQuestion(mut predict) => {
                     let codes = predict
                         .code_files
                         .iter()
@@ -100,32 +156,18 @@ impl Exam {
                         .collect::<Vec<(String, String)>>();
 
                     predict.code = codes;
-                    Box::new(predict)
+                    Question::PredictOutputQuestion(predict)
                 }
 
-                QuestionType::MultipleChoiceQuestion => Box::new(
-                    serde_json::from_value::<MultipleChoiceQuestions>(question_schema.question)
-                        .expect("Unable to parse MultipleChoiceQuestion Question"),
-                ),
-                QuestionType::WriteCode => {
-                    eprintln!("Code test harness is not yet finalised.");
-                    Box::new(
-                        serde_json::from_value::<WriteCode>(question_schema.question)
-                            .expect("Unable to parse WriteCode Question"),
-                    )
-                }
-                QuestionType::Raw => Box::new(
-                    serde_json::from_value::<Raw>(question_schema.question)
-                        .expect("Unable to parse Raw Question"),
-                ),
+                _ => q
             };
             questions.push(question);
         }
 
-        Exam {
+        Ok(Exam {
             exam_schema,
             questions,
-        }
+        })
     }
 
     pub fn make_exam(&self) {

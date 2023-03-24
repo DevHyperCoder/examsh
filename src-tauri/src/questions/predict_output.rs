@@ -1,10 +1,10 @@
 use crate::{questions::Question, utils::wrap_in_code_blocks};
 
 use chrono::Utc;
-use serde::Deserialize;
+use serde::{Serialize,Deserialize};
 use std::{fs::OpenOptions, io::Write, process::Command};
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 pub struct PredictOutput {
     pub question: String,
     pub pre_run: String,
@@ -16,8 +16,8 @@ pub struct PredictOutput {
     pub code: Vec<(String, String)>,
 }
 
-impl Question for PredictOutput {
-    fn render(&self) -> String {
+impl PredictOutput {
+    pub fn render(&self) -> String {
         let mut temp_dir = std::env::temp_dir();
         temp_dir.push(format!("examsh-{}", Utc::now()));
         std::fs::create_dir(&temp_dir).expect("Unable to create temp directory");
