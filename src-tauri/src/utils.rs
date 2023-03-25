@@ -1,7 +1,8 @@
 use std::{
     fs::OpenOptions,
     io::Write,
-    process::{Command, Stdio}, path::PathBuf,
+    path::PathBuf,
+    process::{Command, Stdio},
 };
 
 use which::which;
@@ -17,46 +18,48 @@ pub fn wrap_in_code_blocks(s: &str) -> String {
     )
 }
 
-pub fn render_latex(latexfname: String, out_dir: &PathBuf, content: &str) -> Result<(), ExamshError> {
+pub fn render_latex(
+    latexfname: String,
+    out_dir: &PathBuf,
+    content: &str,
+) -> Result<(), ExamshError> {
     let mut latexname = out_dir.clone();
     latexname.push(latexfname);
 
     match which("pdflatex") {
         Ok(_) => (),
         Err(e) => {
-            return Err(ExamshError::Unexpected(format!("Could not find pdflatex: {}",e.to_string())))
+            return Err(ExamshError::Unexpected(format!(
+                "Could not find pdflatex: {}",
+                e
+            )))
         }
     }
 
-    let mut f = match OpenOptions::new()
-        .create(true)
-        .write(true)
-        .open(&latexname) {
-            Err(_) => return Err(ExamshError::OpenFile(latexname)),
-            Ok(f) => f
+    let mut f = match OpenOptions::new().create(true).write(true).open(&latexname) {
+        Err(_) => return Err(ExamshError::OpenFile(latexname)),
+        Ok(f) => f,
     };
 
-    match write!(f, "{}", content) {
-        Err(_) => return Err(ExamshError::WriteFile(latexname)),
-        Ok(_) => ()
-    };
+    if write!(f, "{}", content).is_err() {
+        return Err(ExamshError::WriteFile(latexname));
+    }
 
-    match f.flush() {
-        Err(_) => return Err(ExamshError::Unexpected(format!("Unable to flush file: {}", latexname.display()))),
-        Ok(_) => ()
-    };
+    if f.flush().is_err() {
+        return Err(ExamshError::Unexpected(format!(
+            "Unable to flush file: {}",
+            latexname.display()
+        )));
+    }
 
     match Command::new("pdflatex")
         .arg("-output-directory")
         .arg(out_dir)
         .arg(format!("\"{}\"", latexname.display()))
         .stdout(Stdio::null())
-        .status() {
-            Ok(_) => {Ok(())},
-            Err(err) => {
-                Err(ExamshError::Unexpected(err.to_string()))
-
-            }
+        .status()
+    {
+        Ok(_) => Ok(()),
+        Err(err) => Err(ExamshError::Unexpected(err.to_string())),
     }
-
 }

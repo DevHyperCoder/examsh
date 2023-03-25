@@ -8,13 +8,13 @@ pub use multiple_choice::MultipleChoiceQuestions;
 pub use predict_output::PredictOutput;
 pub use write_code::WriteCode;
 
-#[derive(Clone, Debug,Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "qtype")]
 pub enum Question {
     RawQuestion(Raw),
     PredictOutputQuestion(PredictOutput),
     MultipleChoiceQuestion(MultipleChoiceQuestions),
-    WriteCodeQuestion(WriteCode)
+    WriteCodeQuestion(WriteCode),
 }
 
 impl Question {
@@ -23,12 +23,12 @@ impl Question {
             Question::RawQuestion(r) => r.render(),
             Question::PredictOutputQuestion(pto) => pto.render(),
             Question::MultipleChoiceQuestion(mcq) => mcq.render(),
-            Question::WriteCodeQuestion(wc) => wc.render()
+            Question::WriteCodeQuestion(wc) => wc.render(),
         }
     }
 }
 
-#[derive(Clone,Debug,Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Raw {
     latex: String,
 }

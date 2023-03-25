@@ -1,10 +1,10 @@
-use crate::{questions::Question, utils::wrap_in_code_blocks};
+use crate::utils::wrap_in_code_blocks;
 
 use chrono::Utc;
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 use std::{fs::OpenOptions, io::Write, process::Command};
 
-#[derive(Clone,Debug,Deserialize,Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PredictOutput {
     pub question: String,
     pub pre_run: String,
