@@ -1,7 +1,7 @@
 use std::{
     fs::OpenOptions,
     io::Write,
-    path::PathBuf,
+    path::{PathBuf, Path},
     process::{Command, Stdio},
 };
 
@@ -62,4 +62,31 @@ pub fn render_latex(
         Ok(_) => Ok(()),
         Err(err) => Err(ExamshError::Unexpected(err.to_string())),
     }
+}
+
+#[cfg(unix)]
+pub fn exec_shell(cmd: &String, current_dir: &Path) -> String  {
+        let output = Command::new("/bin/sh")
+            .arg("-c")
+            .arg(cmd)
+            .current_dir(current_dir)
+            .output()
+            .expect(&format!("Unable to run {}", cmd));
+
+        String::from_utf8(output.stdout).expect("Unable to get output")
+
+}
+
+
+#[cfg(windows)]
+pub fn exec_shell(cmd: &String, current_dir: &Path) -> String  {
+    let comspec = std::env::var_os("COMSPEC").unwrap_or_else(|| "cmd.exe".into());
+    let output = Command::new(compsec)
+        .arg("/C")
+        .arg(cmd)
+        .current_dir(current_dir)
+        .output()
+        .expect(&format!("Unable to run {}", cmd));
+
+    String::from_utf8(output.stdout).expect("Unable to get output")
 }
