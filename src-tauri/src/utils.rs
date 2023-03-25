@@ -1,8 +1,12 @@
 use std::{
     fs::OpenOptions,
     io::Write,
-    process::{Command, Stdio},
+    process::{Command, Stdio}, path::PathBuf,
 };
+
+use which::which;
+
+use crate::errors::ExamshError;
 
 pub fn wrap_in_code_blocks(s: &str) -> String {
     format!(
@@ -13,20 +17,46 @@ pub fn wrap_in_code_blocks(s: &str) -> String {
     )
 }
 
-pub fn render_latex(latexname: &str, out_dir: &str, content: &str) {
-    let mut f = OpenOptions::new()
+pub fn render_latex(latexfname: String, out_dir: &PathBuf, content: &str) -> Result<(), ExamshError> {
+    let mut latexname = out_dir.clone();
+    latexname.push(latexfname);
+
+    match which("pdflatex") {
+        Ok(_) => (),
+        Err(e) => {
+            return Err(ExamshError::Unexpected(format!("Could not find pdflatex: {}",e.to_string())))
+        }
+    }
+
+    let mut f = match OpenOptions::new()
         .create(true)
         .write(true)
-        .open(latexname)
-        .expect("Unable to open file for writing.");
-    write!(f, "{}", content).expect("Unable to write to file.");
-    f.flush().expect("Unable to flush.");
+        .open(&latexname) {
+            Err(_) => return Err(ExamshError::OpenFile(latexname)),
+            Ok(f) => f
+    };
 
-    Command::new("pdflatex")
+    match write!(f, "{}", content) {
+        Err(_) => return Err(ExamshError::WriteFile(latexname)),
+        Ok(_) => ()
+    };
+
+    match f.flush() {
+        Err(_) => return Err(ExamshError::Unexpected(format!("Unable to flush file: {}", latexname.display()))),
+        Ok(_) => ()
+    };
+
+    match Command::new("pdflatex")
         .arg("-output-directory")
         .arg(out_dir)
-        .arg(format!("\"{}\"", latexname))
+        .arg(format!("\"{}\"", latexname.display()))
         .stdout(Stdio::null())
-        .status()
-        .expect("Unable to execute latex renderer");
+        .status() {
+            Ok(_) => {Ok(())},
+            Err(err) => {
+                Err(ExamshError::Unexpected(err.to_string()))
+
+            }
+    }
+
 }

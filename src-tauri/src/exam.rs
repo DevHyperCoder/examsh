@@ -234,8 +234,8 @@ Err(_) => {
         let exam = d.replace("MODE", "12pt, addpoints");
         let marking = d.replace("MODE", "12pt, answers");
 
-        render_latex(QPFILE, OUT_DIR, &exam);
-        render_latex(MSFILE, OUT_DIR, &marking);
+        render_latex("exam.tex".into(), &self.exam_dir, &exam);
+        render_latex("marking.tex".into(), &self.exam_dir, &marking);
     }
 
     fn generate_questions(&self) -> String {

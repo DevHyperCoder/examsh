@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from '$app/stores';
 import CreateQuestion from '$lib/CreateQuestion.svelte';
-    import { invoke } from '@tauri-apps/api';
+    import { invoke,dialog } from '@tauri-apps/api';
 
     export let {examIdent} = $page.params;
     const e = async () => {
@@ -16,6 +16,13 @@ import CreateQuestion from '$lib/CreateQuestion.svelte';
     let err = "";
     let exam: any;
     e()
+
+    async function render() {
+            try {await invoke('render_exam', {examIdent})
+            } catch(e) {
+                    await dialog.message(e as string, {title: "Error!", type: "error"})
+                }
+        }
 
 </script>
 
@@ -44,6 +51,7 @@ import CreateQuestion from '$lib/CreateQuestion.svelte';
 
     <CreateQuestion onQuestionChanged={(qs) => exam.questions = qs} examIdent={examIdent} />
 
+    <button on:click={render}>Make Question PDF and answer PDF</button>
 {/if}
 
 <p>{err}</p>

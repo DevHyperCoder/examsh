@@ -12,6 +12,18 @@ struct LoadedExams {
     pub loaded: HashMap<String, Exam>
 }
 
+#[tauri::command]
+fn render_exam(exam_ident: String, state:tauri::State<Arc<Mutex<LoadedExams>>>) -> Result< (), ExamshError> {
+    let mut s = state.lock().unwrap();
+    let exam = s.loaded.get(&exam_ident);
+    let exam = match exam {
+        None => return Err(ExamshError::NotInCache()),
+        Some(e) => e
+    };
+
+    Ok(exam.make_exam())
+
+}
 
 #[tauri::command]
 fn add_question(exam_ident: String,question: Question, state:tauri::State<Arc<Mutex<LoadedExams>>>) -> Result< Vec<Question>, ExamshError> {
@@ -115,7 +127,7 @@ fn main() {
           current_exam: "".into(),
           loaded: HashMap::new()
       })))
-      .invoke_handler(tauri::generate_handler![create_new_exam,load_exam,load_exam_with_ident, add_question])
+      .invoke_handler(tauri::generate_handler![create_new_exam,load_exam,load_exam_with_ident, add_question,render_exam])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
