@@ -1,45 +1,36 @@
 <script lang="ts">
+import { goto } from '$app/navigation';
 import {dialog, invoke} from "@tauri-apps/api"
 import CreateExam from "../lib/CreateExam.svelte";
 
 async function loadExam() {
     const directory = await dialog.open({
-            directory: true,
-            title: "Choose the folder with your exam",
-            multiple: false,
-            recursive: false
-        });
+        directory: true,
+        title: "Choose the folder with your exam",
+        multiple: false,
+        recursive: false
+    });
 
+    if (!directory) {err = "No directory chosen."; return;}
 
-    if (!directory) {str = "No directory chosen."; return;}
     try{
-        val = await invoke("load_exam", {
+        const val: [any, string] = await invoke("load_exam", {
             directory,
         })
-        str = ""
+        goto(`/exam/${val[1]}`)
+        err = ""
     } catch(e) {
-            str =(e as any)
-            val = ""
-        }
+        err =(e as any)
+    }
 }
 
-let str = ""
-let val:any = []
+let err = ""
 
 </script>
 
 <h1>Welcome to examsh</h1>
-<a href="/index"> index</a>
-
-<a href="/exam/{val[1] || '404'}">Go to exam</a>
 
 <button on:click={loadExam}>Load existing exam</button>
-<pre>
-<code>
-{val}
-</code>
-</pre>
-
-<p>{str}</p>
+<p>{err}</p>
 
 <CreateExam />

@@ -1,20 +1,23 @@
 <script lang="ts">
+import { goto } from "$app/navigation";
+
 import {dialog, invoke} from "@tauri-apps/api"
 async function createNewExam() {
     const directory = await dialog.open({
-            directory: true,
-            title: "Choose a folder to store your new exam",
-            multiple: false,
-            recursive: false
-        });
+        directory: true,
+        title: "Choose a folder to store your new exam",
+        multiple: false,
+        recursive: false
+    });
 
 
     if (!directory) {str = "No directory chosen."; return;}
     try{
-        await invoke("create_new_exam", {
+        const val: [any, string] = await invoke("create_new_exam", {
             directory,
             examSchema: exam_schema
         })
+        goto(`/exam/${val[1]}`)
         str = ""
     } catch(e) {
             str =(e as any)

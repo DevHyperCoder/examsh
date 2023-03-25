@@ -104,7 +104,7 @@ fn create_new_exam(
     directory: String,
     exam_schema: ExamSchema,
     state: tauri::State<Arc<Mutex<LoadedExams>>>,
-) -> Result<Exam, ExamshError> {
+) -> Result<(Exam, String), ExamshError> {
     println!("Name: {}", exam_schema.test_name);
     println!("Directory: {}", directory);
     let path_buf = PathBuf::from(directory);
@@ -115,16 +115,18 @@ fn create_new_exam(
             Ok(b) => {
                 if b {
                     let res = Exam::create_exam(exam_schema, &path_buf);
-                    if res.is_ok() {
-                        let exam = res.as_ref().expect("PANIC");
+                    match res {
+                        Ok(exam) => {
                         state
                             .lock()
                             .unwrap()
                             .loaded
                             .insert(exam.get_identifier(), exam.to_owned());
                         state.lock().unwrap().current_exam = exam.get_identifier();
+                        Ok((exam.to_owned(), exam.get_identifier()))
                     }
-                    res
+                        Err(e) => Err(e)
+                    }
                 } else {
                     Err(ExamshError::DirectoryNotEmpty(path_buf))
                 }
