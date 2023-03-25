@@ -1,15 +1,14 @@
-use crate::questions::Question;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MultipleChoiceQuestions {
     pub question: String,
     pub answers: Vec<String>,
     pub correct_id: usize,
 }
 
-impl Question for MultipleChoiceQuestions {
-    fn render(&self) -> String {
+impl MultipleChoiceQuestions {
+    pub fn render(&self) -> String {
         let choices = self
             .answers
             .iter()

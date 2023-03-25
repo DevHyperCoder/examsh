@@ -1,14 +1,14 @@
-use crate::{questions::Question, utils::wrap_in_code_blocks};
-use serde::Deserialize;
+use crate::utils::wrap_in_code_blocks;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct WriteCode {
     question: String,
     output: String,
 }
 
-impl Question for WriteCode {
-    fn render(&self) -> String {
+impl WriteCode {
+    pub fn render(&self) -> String {
         format!(
             "
 \\question
