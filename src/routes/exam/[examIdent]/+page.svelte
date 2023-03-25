@@ -1,20 +1,22 @@
 <script lang="ts">
     import { page } from '$app/stores';
-import { invoke } from '@tauri-apps/api';
+import CreateQuestion from '$lib/CreateQuestion.svelte';
+    import { invoke } from '@tauri-apps/api';
 
-export let {examIdent} = $page.params;
-const e = async () => {
-    if (examIdent) {
-        try{
-             exam = await invoke('load_exam_with_ident', {examIdent: examIdent})
-        } catch(e) {
-                err = e as string
+    export let {examIdent} = $page.params;
+    const e = async () => {
+        if (examIdent) {
+            try{
+                 exam = await invoke('load_exam_with_ident', {examIdent: examIdent})
+            } catch(e) {
+                    err = e as string
             }
-}};
+    }};
 
-let err = "";
-let exam: any;
-e()
+    let err = "";
+    let exam: any;
+    e()
+
 </script>
 
 {#if exam}
@@ -40,6 +42,9 @@ e()
         {/if}
     {/each}
 
+    <CreateQuestion onQuestionChanged={(qs) => exam.questions = qs} examIdent={examIdent} />
+
 {/if}
+
 <p>{err}</p>
 <a href="../">go back</a>

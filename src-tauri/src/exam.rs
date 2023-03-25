@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io::{Read,Write},
     path::PathBuf,
 };
@@ -37,10 +37,40 @@ enum QuestionType {
 #[derive(Clone, Debug,Serialize)]
 pub struct Exam {
     exam_schema: ExamSchema,
+    exam_dir: PathBuf,
     questions: Vec<Question>,
 }
 
 impl Exam {
+    pub fn get_questions(&self) -> &Vec<Question> {
+        &self.questions
+    }
+    pub fn add_question(&mut self, question: Question) -> Result<&mut Exam, ExamshError> {
+        let mut newf = self.exam_dir.clone();
+        newf.push("questions");
+        newf.push(format!("examsh-{}.json",Utc::now()));
+
+        let mut f = match OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&newf) {
+                Err(e) => {println!("{:?}",e ); return Err(ExamshError::CreateFile(newf))},
+                Ok(f) => f
+            };
+        let s = match serde_json::to_string_pretty(&question) {
+            Err(_) => return Err(ExamshError::Unexpected("Unable to make question".into())),
+            Ok(s) => s
+        };
+
+        match write!(f, "{}", s) {
+            Ok(_) => {
+                self.questions.push(question);
+                Ok(self)},
+            Err(_) => Err(ExamshError::WriteFile(newf))
+        }
+
+
+    }
     pub fn get_identifier(&self) -> String {
         format!("{}${}",self.exam_schema.course_name, self.exam_schema.test_name)
     }
@@ -61,6 +91,7 @@ impl Exam {
                                 match fs::create_dir(&d) {
                                     Err(_) => Err(ExamshError::Unexpected(format!("Unable to create questions directory at: {}", d.display()))),
                                     Ok(_) => Ok(Exam {
+                                        exam_dir: d,
                                         questions: vec![],
                                         exam_schema
                                     })
@@ -105,7 +136,7 @@ Err(_) => {
         // - Only 1 level deep questions are supported and that too for PredictOutput questions.
         // - recursive questions are not supported.
 
-        let mut questions_path = PathBuf::from(fname);
+        let mut questions_path = PathBuf::from(&fname);
         questions_path.pop(); // pop file name
         questions_path.push("questions");
 
@@ -169,7 +200,10 @@ Err(_) => {
             questions.push(question);
         }
 
+        let mut exam_dir = PathBuf::from(fname);
+        exam_dir.pop();
         Ok(Exam {
+            exam_dir,
             exam_schema,
             questions,
         })

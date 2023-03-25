@@ -5,11 +5,30 @@
 
 use std::{path::PathBuf, collections::HashMap, sync::{Mutex, Arc}};
 
-use app::{exam::{Exam, ExamSchema}, errors::ExamshError};
+use app::{exam::{Exam, ExamSchema}, errors::ExamshError, questions::Question};
 
 struct LoadedExams {
     pub current_exam: String,
     pub loaded: HashMap<String, Exam>
+}
+
+
+#[tauri::command]
+fn add_question(exam_ident: String,question: Question, state:tauri::State<Arc<Mutex<LoadedExams>>>) -> Result< Vec<Question>, ExamshError> {
+    let mut s = state.lock().unwrap();
+    let exam = s.loaded.get_mut(&exam_ident);
+    let exam = match exam {
+        None => return Err(ExamshError::NotInCache()),
+        Some(e) => e
+    };
+
+    match exam.add_question(question) {
+        Err(e) => Err(e), 
+        Ok(exam) => {
+            Ok(exam.clone().get_questions().clone())
+        }
+    }
+
 }
 
 #[tauri::command]
@@ -96,7 +115,7 @@ fn main() {
           current_exam: "".into(),
           loaded: HashMap::new()
       })))
-      .invoke_handler(tauri::generate_handler![create_new_exam,load_exam,load_exam_with_ident])
+      .invoke_handler(tauri::generate_handler![create_new_exam,load_exam,load_exam_with_ident, add_question])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
