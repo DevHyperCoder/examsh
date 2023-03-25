@@ -6,6 +6,7 @@ use std::{
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{errors::ExamshError, questions::Question, utils::render_latex};
 
@@ -40,7 +41,7 @@ impl Exam {
     pub fn add_question(&mut self, question: Question) -> Result<&mut Exam, ExamshError> {
         let mut newf = self.exam_dir.clone();
         newf.push("questions");
-        newf.push(format!("examsh-{}.json", Utc::now()));
+        newf.push(format!("examsh-{}.json", Uuid::new_v4()));
 
         let mut f = match OpenOptions::new().create(true).write(true).open(&newf) {
             Err(e) => {
