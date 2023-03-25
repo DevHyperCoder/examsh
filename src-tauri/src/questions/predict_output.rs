@@ -1,8 +1,8 @@
-use crate::utils::{wrap_in_code_blocks, exec_shell};
+use crate::utils::{exec_shell, wrap_in_code_blocks};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::{fs::OpenOptions, io::Write };
+use std::{fs::OpenOptions, io::Write};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PredictOutput {
@@ -11,7 +11,7 @@ pub struct PredictOutput {
     pub run: String,
     pub post_run: String,
 
-    // PathBuf of the file. If second arg is None, load from disk. otherwise use content 
+    // PathBuf of the file. If second arg is None, load from disk. otherwise use content
     pub _code: Vec<(String, Option<String>)>,
 
     #[serde(skip)]
@@ -36,7 +36,6 @@ impl PredictOutput {
                     .open(asdf)
                     .expect("Unable to open file");
 
-
                 write!(f, "{}", code).expect("Unable to write to file");
                 f.flush().expect("Unable to flush");
 
@@ -55,17 +54,15 @@ impl PredictOutput {
         // TODO: The command runner is specific to *nix (atleast those that have /bin/sh).
         // Need to figure out a way to make it platform indep.
 
-            if !self.pre_run.is_empty() {
-                exec_shell(&self.pre_run, &temp_dir);
-            }
+        if !self.pre_run.is_empty() {
+            exec_shell(&self.pre_run, &temp_dir);
+        }
 
-            let output =  exec_shell(&self.run, &temp_dir);
+        let output = exec_shell(&self.run, &temp_dir);
 
-            if !self.post_run.is_empty() {
-                exec_shell(&self.post_run, &temp_dir);
-            }
-
-
+        if !self.post_run.is_empty() {
+            exec_shell(&self.post_run, &temp_dir);
+        }
 
         format!(
             "

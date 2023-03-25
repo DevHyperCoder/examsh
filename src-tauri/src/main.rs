@@ -117,15 +117,15 @@ fn create_new_exam(
                     let res = Exam::create_exam(exam_schema, &path_buf);
                     match res {
                         Ok(exam) => {
-                        state
-                            .lock()
-                            .unwrap()
-                            .loaded
-                            .insert(exam.get_identifier(), exam.to_owned());
-                        state.lock().unwrap().current_exam = exam.get_identifier();
-                        Ok((exam.to_owned(), exam.get_identifier()))
-                    }
-                        Err(e) => Err(e)
+                            state
+                                .lock()
+                                .unwrap()
+                                .loaded
+                                .insert(exam.get_identifier(), exam.to_owned());
+                            state.lock().unwrap().current_exam = exam.get_identifier();
+                            Ok((exam.to_owned(), exam.get_identifier()))
+                        }
+                        Err(e) => Err(e),
                     }
                 } else {
                     Err(ExamshError::DirectoryNotEmpty(path_buf))

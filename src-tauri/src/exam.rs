@@ -182,34 +182,30 @@ impl Exam {
                 Ok(q) => q,
             };
 
-         let question: Question = match q {
-             Question::PredictOutputQuestion(mut predict) => {
-                 let codes = predict
-                     ._code
-                     .iter()
-                     .map(|(code_fname, code)| {
-                         match code {
-                             Some(s) => (code_fname.to_string() ,s.to_string()),
-                             None => {
+            let question: Question = match q {
+                Question::PredictOutputQuestion(mut predict) => {
+                    let codes = predict
+                        ._code
+                        .iter()
+                        .map(|(code_fname, code)| match code {
+                            Some(s) => (code_fname.to_string(), s.to_string()),
+                            None => {
+                                let mut asdf = questions_path.clone();
+                                asdf.push(code_fname);
+                                let mut f = File::open(asdf).expect("Unable to open code file.");
+                                let mut fc = String::new();
+                                f.read_to_string(&mut fc).expect("Unable to read file");
+                                (code_fname.to_string(), fc)
+                            }
+                        })
+                        .collect::<Vec<(String, String)>>();
 
-                             let mut asdf = questions_path.clone();
-                             asdf.push(code_fname);
-                             let mut f = File::open(asdf).expect("Unable to open code file.");
-                             let mut fc = String::new();
-                             f.read_to_string(&mut fc).expect("Unable to read file");
-                             (code_fname.to_string(), fc)
-                         }
-                         }
-                     })
+                    predict.code = codes;
+                    Question::PredictOutputQuestion(predict)
+                }
 
-                     .collect::<Vec<(String, String)>>();
-
-                 predict.code = codes;
-                 Question::PredictOutputQuestion(predict)
-             }
-
-             _ => q,
-         };
+                _ => q,
+            };
             questions.push(question);
         }
 
