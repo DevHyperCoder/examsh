@@ -81,7 +81,7 @@ pub fn exec_shell(cmd: &String, current_dir: &Path) -> String  {
 #[cfg(windows)]
 pub fn exec_shell(cmd: &String, current_dir: &Path) -> String  {
     let comspec = std::env::var_os("COMSPEC").unwrap_or_else(|| "cmd.exe".into());
-    let output = Command::new(compsec)
+    let output = Command::new(comspec)
         .arg("/C")
         .arg(cmd)
         .current_dir(current_dir)
