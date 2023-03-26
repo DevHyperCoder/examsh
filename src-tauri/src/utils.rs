@@ -71,7 +71,7 @@ pub fn exec_shell(cmd: &String, current_dir: &Path) -> String {
         .arg(cmd)
         .current_dir(current_dir)
         .output()
-        .expect(&format!("Unable to run {}", cmd));
+        .unwrap_or_else(|_| panic!("Unable to run {}", cmd));
 
     String::from_utf8(output.stdout).expect("Unable to get output")
 }

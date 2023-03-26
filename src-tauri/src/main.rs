@@ -105,8 +105,6 @@ fn create_new_exam(
     exam_schema: ExamSchema,
     state: tauri::State<Arc<Mutex<LoadedExams>>>,
 ) -> Result<(Exam, String), ExamshError> {
-    println!("Name: {}", exam_schema.test_name);
-    println!("Directory: {}", directory);
     let path_buf = PathBuf::from(directory);
     if !path_buf.is_dir() {
         Err(ExamshError::NotDirectory(path_buf))

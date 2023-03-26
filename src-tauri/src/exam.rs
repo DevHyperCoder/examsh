@@ -44,8 +44,7 @@ impl Exam {
         newf.push(format!("examsh-{}.json", Uuid::new_v4()));
 
         let mut f = match OpenOptions::new().create(true).write(true).open(&newf) {
-            Err(e) => {
-                println!("{:?}", e);
+            Err(_) => {
                 return Err(ExamshError::CreateFile(newf));
             }
             Ok(f) => f,
@@ -85,7 +84,7 @@ impl Exam {
                                 d.display()
                             ))),
                             Ok(_) => Ok(Exam {
-                                exam_dir: d,
+                                exam_dir: dir.to_path_buf(),
                                 questions: vec![],
                                 exam_schema,
                             }),
@@ -111,8 +110,7 @@ impl Exam {
         }
 
         let exam_schema: ExamSchema = match serde_json::from_str(&content) {
-            Err(e) => {
-                println!("{:?}", e);
+            Err(_) => {
                 return Err(ExamshError::ParseExamFile("exam".into(), fname));
             }
             Ok(s) => s,

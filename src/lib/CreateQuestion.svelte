@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api';
+	import Button from './Button.svelte';
+	import Input from './Input.svelte';
+	import SelectInput from './SelectInput.svelte';
+	import TextInput from './TextInput.svelte';
 
 	export let examIdent: string;
 	export let onQuestionChanged: (newQ: any[]) => void;
 
 	const qtypes = [
-		'PredictOutputQuestion',
-		'MultipleChoiceQuestion',
-		'WriteCodeQuestion',
-		'RawQuestion'
+		{ name: 'Predict Output', value: 'PredictOutputQuestion' },
+		{ name: 'MCQ', value: 'MultipleChoiceQuestion' },
+		{ name: 'Write code', value: 'WriteCodeQuestion' },
+		{ name: 'Raw', value: 'RawQuestion' }
 	];
 
 	let qtype: string;
@@ -59,19 +63,17 @@
 	}
 </script>
 
-<form>
-	<select bind:value={qtype}>
-		{#each qtypes as qtype}
-			<option value={qtype}>
-				{qtype}
-			</option>
-		{/each}
-	</select>
+<form class="w-1/2 mx-auto flex flex-col gap-3">
+	<SelectInput id="question-type" items={qtypes} bind:value={qtype} label="Question type:" />
 
 	{#if qtype == 'RawQuestion'}
 		<p><b>Note:</b>Use pure LaTeX to write your question.</p>
-		<label for="question">Question:</label>
-		<textarea id="question" bind:value={rawQuestion.latex} placeholder="Question" />
+		<TextInput
+			label="Question:"
+			id="raw-question-latex"
+			bind:value={rawQuestion.latex}
+			placeholder="Question"
+		/>
 	{:else if qtype == 'MultipleChoiceQuestion'}
 		<label for="question">Question:</label>
 		<textarea id="question" bind:value={multipleChoiceQuestion.question} placeholder="Question" />
@@ -92,38 +94,49 @@
 			}}>New answer</button
 		>
 	{:else if qtype == 'PredictOutputQuestion'}
-		<label for="question">Question:</label>
-		<textarea id="question" bind:value={predictOutputQuestion.question} placeholder="Question" />
+		<TextInput
+			id="predict-output-question"
+			placeholder="Enter question"
+			bind:value={predictOutputQuestion.question}
+			label="Question:"
+		/>
 
-		<label for="pre-run">Command to run BEFORE execution (compilation etc)</label>
-		<input id="pre-run" bind:value={predictOutputQuestion.pre_run} />
+		<Input
+			placeholder="Enter pre command"
+			label="Command to run BEFORE execution (compilation etc)"
+			id="pre-run"
+			bind:value={predictOutputQuestion.pre_run}
+		/>
+		<Input
+			placeholder="Enter run command"
+			label="Command to run FOR execution (actuaion running of the program)"
+			id="run"
+			bind:value={predictOutputQuestion.run}
+		/>
+		<Input
+			placeholder="Enter post command"
+			label="Command to run AFTER execution (cleanup etc)"
+			id="post-run"
+			bind:value={predictOutputQuestion.post_run}
+		/>
 
-		<label for="run">Command to run FOR execution (actual running of the program)</label>
-		<input id="run" bind:value={predictOutputQuestion.run} />
-
-		<label for="post-run">Command to run AFTER execution (cleanup etc)</label>
-		<input id="post-run" bind:value={predictOutputQuestion.post_run} />
+		<h2 class="text-lg font-semibold text-stone-800">Code files:</h2>
 
 		{#each predictOutputQuestion._code as code_file}
-			<label for="fname">File Name:</label>
-			<input id="fname" bind:value={code_file[0]} placeholder="Filename" />
-			<label for="code">Code:</label>
-			<textarea id="code" bind:value={code_file[1]} placeholder="Code" />
+			<Input label="File Name: " id="fname" bind:value={code_file[0]} placeholder="Filename" />
+			<TextInput label="Code: " id="code" bind:value={code_file[1]} placeholder="Code" />
 		{/each}
 
-		<button
-			on:click={() => (predictOutputQuestion._code = [...predictOutputQuestion._code, ['', '']])}
-			>create new</button
+		<Button
+			klazz="w-max mr-auto"
+			click={() => (predictOutputQuestion._code = [...predictOutputQuestion._code, ['', '']])}
+			>Create new file</Button
 		>
 	{:else}
 		<p>unimplemented</p>
 	{/if}
 
-	<button disabled={qtypes[2] == qtype} on:click={addQuestion}> Add Question</button>
+	<Button klazz="w-max ml-auto" disabled={qtypes[2].value == qtype} click={addQuestion}>
+		Add Question</Button
+	>
 </form>
-
-<style>
-	.bold {
-		font-weight: bold;
-	}
-</style>

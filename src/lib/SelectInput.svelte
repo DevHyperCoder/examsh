@@ -1,0 +1,27 @@
+<script lang="ts">
+	export let id: string;
+	export let value: string;
+	export let klazz: string = '';
+	export let label: string;
+
+	export let items: { value: string; name: string }[];
+</script>
+
+<div class="flex flex-col gap-1">
+	<label class="font-bold text-stone-800" for={id}>{label}</label>
+	<select
+		class={`
+                    block
+                    rounded-md
+                    bg-gray-100
+                    border-transparent
+                    focus:border-gray-500 focus:bg-white focus:ring-0
+
+        ${klazz}`}
+		bind:value
+	>
+		{#each items as item}
+			<option value={item.value}>{item.name}</option>
+		{/each}
+	</select>
+</div>

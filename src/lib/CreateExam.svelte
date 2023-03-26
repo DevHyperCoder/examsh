@@ -2,6 +2,11 @@
 	import { goto } from '$app/navigation';
 
 	import { dialog, invoke } from '@tauri-apps/api';
+	import Button from './Button.svelte';
+	import Error from './Error.svelte';
+	import Input from './Input.svelte';
+	import TextInput from './TextInput.svelte';
+
 	async function createNewExam() {
 		const directory = await dialog.open({
 			directory: true,
@@ -40,57 +45,38 @@
 	let str = '';
 </script>
 
-<h1>Create new exam</h1>
+<h1 class="text-center text-2xl font-bold text-stone-800 mb-3">Create new exam</h1>
 
-<form>
-	<div>
-		<label for="course-name">Course name: </label>
-		<input
-			id="course-name"
-			placeholder="Enter new course name: "
-			bind:value={exam_schema.course_name}
-		/>
-	</div>
+<form class="w-1/2 mx-auto flex flex-col gap-3">
+	<Input
+		label="Course name:"
+		id="course-name"
+		placeholder="Enter new course name: "
+		bind:value={exam_schema.course_name}
+	/>
 
-	<div>
-		<label for="test-name">Test name: </label>
-		<input id="test-name" placeholder="Enter new test name: " bind:value={exam_schema.test_name} />
-	</div>
+	<Input
+		label="Test name:"
+		id="test-name"
+		placeholder="Enter new test name: "
+		bind:value={exam_schema.test_name}
+	/>
 
-	<div>
-		<label for="instructions">Test Instructions: </label>
-		<textarea
-			id="instructions"
-			placeholder="Test instructions"
-			bind:value={exam_schema.instructions}
-		/>
-	</div>
+	<TextInput
+		label="Candidate instructions: "
+		id="c-instructions"
+		placeholder="Enter instructions for the candidates"
+		bind:value={exam_schema.instructions}
+	/>
 
-	<div>
-		<label for="marking-instructions">Marking Instructions: </label>
-		<textarea
-			id="marking-instructions"
-			placeholder="Marking instructions"
-			bind:value={exam_schema.marking_instructions}
-		/>
-	</div>
+	<TextInput
+		label="Marking instructions: "
+		id="m-instructions"
+		placeholder="Enter instructions for the evaluators"
+		bind:value={exam_schema.marking_instructions}
+	/>
 
-	<button on:click={createNewExam}>Create new exam</button>
+	<Error err={str} />
+
+	<Button klazz="w-max ml-auto text-lg" click={createNewExam}>Create new exam</Button>
 </form>
-
-<p>{str}</p>
-
-<style>
-	div {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-	form {
-		display: flex;
-		flex-direction: column;
-		width: 60%;
-		margin: 0 auto;
-		gap: 1rem;
-	}
-</style>

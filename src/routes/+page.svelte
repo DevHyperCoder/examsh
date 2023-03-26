@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import Error from '$lib/Error.svelte';
 	import { dialog, invoke } from '@tauri-apps/api';
 	import CreateExam from '../lib/CreateExam.svelte';
 
@@ -28,11 +29,26 @@
 	}
 
 	let err = '';
+
+	let showingCreate = false;
 </script>
 
 <h1>Welcome to examsh</h1>
 
-<button on:click={loadExam}>Load existing exam</button>
-<p>{err}</p>
+<button
+	class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
+	on:click={async () => {
+		showingCreate = false;
+		await loadExam();
+	}}>Load existing exam</button
+>
+<button
+	class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
+	on:click={() => (showingCreate = true)}>Create new exam</button
+>
 
-<CreateExam />
+<Error {err} />
+
+{#if showingCreate}
+	<CreateExam />
+{/if}
