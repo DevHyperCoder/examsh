@@ -2,7 +2,7 @@ use crate::utils::{exec_shell, wrap_in_code_blocks};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::{fs::OpenOptions, io::Write};
+use std::{fs::{OpenOptions, File}, io::{Write, Read}, path::Path};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PredictOutput {
@@ -19,6 +19,26 @@ pub struct PredictOutput {
 }
 
 impl PredictOutput {
+    pub fn parse_code(&mut self, questions_path: &Path) {
+        let codes = self
+            ._code
+            .iter()
+            .map(|(code_fname, code)| match code {
+                Some(s) => (code_fname.to_string(), s.to_string()),
+                None => {
+                    let mut asdf = questions_path.to_path_buf();
+                    asdf.push(code_fname);
+                    let mut f = File::open(asdf).expect("Unable to open code file.");
+                    let mut fc = String::new();
+                    f.read_to_string(&mut fc).expect("Unable to read file");
+                    (code_fname.to_string(), fc)
+                }
+            })
+            .collect::<Vec<(String, String)>>();
+
+        self.code = codes;
+    }
+
     pub fn render(&self) -> String {
         let mut temp_dir = std::env::temp_dir();
         temp_dir.push(format!("examsh-{}", Utc::now()));

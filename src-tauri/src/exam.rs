@@ -38,7 +38,20 @@ impl Exam {
     pub fn get_questions(&self) -> &Vec<Question> {
         &self.questions
     }
-    pub fn add_question(&mut self, question: Question) -> Result<&mut Exam, ExamshError> {
+    pub fn add_question(&mut self, q: Question) -> Result<&mut Exam, ExamshError> {
+
+            let question: Question = match q {
+                Question::PredictOutputQuestion(mut predict) => {
+        let mut newf = self.exam_dir.clone();
+        newf.push("questions");
+                    predict.parse_code(&newf);
+                    Question::PredictOutputQuestion(predict)
+                }
+
+                _ => q,
+            };
+
+
         let mut newf = self.exam_dir.clone();
         newf.push("questions");
         newf.push(format!("examsh-{}.json", Uuid::new_v4()));
@@ -182,23 +195,7 @@ impl Exam {
 
             let question: Question = match q {
                 Question::PredictOutputQuestion(mut predict) => {
-                    let codes = predict
-                        ._code
-                        .iter()
-                        .map(|(code_fname, code)| match code {
-                            Some(s) => (code_fname.to_string(), s.to_string()),
-                            None => {
-                                let mut asdf = questions_path.clone();
-                                asdf.push(code_fname);
-                                let mut f = File::open(asdf).expect("Unable to open code file.");
-                                let mut fc = String::new();
-                                f.read_to_string(&mut fc).expect("Unable to read file");
-                                (code_fname.to_string(), fc)
-                            }
-                        })
-                        .collect::<Vec<(String, String)>>();
-
-                    predict.code = codes;
+                    predict.parse_code(&questions_path);
                     Question::PredictOutputQuestion(predict)
                 }
 
