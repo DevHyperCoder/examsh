@@ -2,7 +2,11 @@ use crate::utils::{exec_shell, wrap_in_code_blocks};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::{fs::{OpenOptions, File}, io::{Write, Read}, path::Path};
+use std::{
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::Path,
+};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PredictOutput {

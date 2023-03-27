@@ -39,18 +39,16 @@ impl Exam {
         &self.questions
     }
     pub fn add_question(&mut self, q: Question) -> Result<&mut Exam, ExamshError> {
+        let question: Question = match q {
+            Question::PredictOutputQuestion(mut predict) => {
+                let mut newf = self.exam_dir.clone();
+                newf.push("questions");
+                predict.parse_code(&newf);
+                Question::PredictOutputQuestion(predict)
+            }
 
-            let question: Question = match q {
-                Question::PredictOutputQuestion(mut predict) => {
-        let mut newf = self.exam_dir.clone();
-        newf.push("questions");
-                    predict.parse_code(&newf);
-                    Question::PredictOutputQuestion(predict)
-                }
-
-                _ => q,
-            };
-
+            _ => q,
+        };
 
         let mut newf = self.exam_dir.clone();
         newf.push("questions");
