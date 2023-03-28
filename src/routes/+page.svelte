@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Error from '$lib/Error.svelte';
 	import { dialog, invoke } from '@tauri-apps/api';
-	import CreateExam from '../lib/CreateExam.svelte';
+	import CreateEditExam from '$lib/exam/CreateEditExam.svelte';
 
 	async function loadExam() {
 		const directory = await dialog.open({
@@ -50,5 +50,5 @@
 <Error {err} />
 
 {#if showingCreate}
-	<CreateExam />
+	<CreateEditExam />
 {/if}

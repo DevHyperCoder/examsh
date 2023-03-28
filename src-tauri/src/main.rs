@@ -100,6 +100,29 @@ fn load_exam(
 }
 
 #[tauri::command]
+fn edit_exam_schema(
+    exam_ident: String,
+    exam_schema: ExamSchema,
+    state: tauri::State<Arc<Mutex<LoadedExams>>>,
+) -> Result<(Exam, String), ExamshError> {
+    let mut s = state.lock().unwrap();
+    let exam = s.loaded.remove(&exam_ident);
+    let mut exam: Exam = match exam {
+        None => return Err(ExamshError::NotInCache()),
+        Some(e) => e.into(),
+    };
+
+    match exam.edit_exam_schema(exam_schema) {
+        Err(e) => Err(e),
+        Ok(exam) => {
+            // Invalidate the old exam_ident if required.
+            s.loaded.insert(exam.get_identifier(), exam.to_owned());
+            Ok((exam.clone(), exam.get_identifier()))
+        }
+    }
+}
+
+#[tauri::command]
 fn create_new_exam(
     directory: String,
     exam_schema: ExamSchema,
@@ -154,6 +177,7 @@ fn main() {
             create_new_exam,
             load_exam,
             load_exam_with_ident,
+            edit_exam_schema,
             add_question,
             render_exam
         ])
