@@ -30,14 +30,14 @@ impl Question {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Raw {
-    latex: String,
+    question: String,
 }
 impl Raw {
     pub fn render(&self) -> String {
         format!(
             "\\question
 {}",
-            self.latex
+            self.question
         )
     }
 }

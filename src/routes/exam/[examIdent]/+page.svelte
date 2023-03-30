@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 import Button from '$lib/Button.svelte';
-	import CreateQuestion from '$lib/CreateQuestion.svelte';
 import ExamDetail from '$lib/exam/ExamDetail.svelte';
+import QuestionsList from '$lib/question/QuestionsList.svelte';
 	import { invoke, dialog } from '@tauri-apps/api';
 
 	export let { examIdent } = $page.params;
@@ -30,26 +30,9 @@ import ExamDetail from '$lib/exam/ExamDetail.svelte';
 </script>
 
 {#if exam}
-    <ExamDetail examIdent={examIdent} examSchema={exam.exam_schema} />
+    <ExamDetail {examIdent} examSchema={exam.exam_schema} />
 
-	<h2>Questions</h2>
-	{#each exam.questions as q}
-		<p>[<span>{q.qtype}</span>] {q.question}</p>
-
-		{#if q.qtype == 'MultipleChoiceQuestion'}
-			{#each q.answers as a, i}
-				{#if q.correct_id == i}
-					<b>{a}</b>
-				{:else}
-					<p>{a}</p>
-				{/if}
-			{/each}
-		{:else}
-			<pre>{JSON.stringify(q, null, 4)}</pre>
-		{/if}
-	{/each}
-
-	<CreateQuestion onQuestionChanged={(qs) => (exam.questions = qs)} {examIdent} />
+<QuestionsList {exam} {examIdent} />
 
 	<Button click={render}>Make Question PDF and answer PDF</Button>
 {/if}
