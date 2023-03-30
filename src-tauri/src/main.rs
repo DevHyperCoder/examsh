@@ -109,7 +109,7 @@ fn edit_exam_schema(
     let exam = s.loaded.remove(&exam_ident);
     let mut exam: Exam = match exam {
         None => return Err(ExamshError::NotInCache()),
-        Some(e) => e.into(),
+        Some(e) => e,
     };
 
     match exam.edit_exam_schema(exam_schema) {

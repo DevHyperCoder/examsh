@@ -2,12 +2,18 @@
 	import { invoke } from '@tauri-apps/api';
 	import Button from './Button.svelte';
 	import Input from './Input.svelte';
-    import Mcq from './question/MCQ.svelte';
-import PredictOutput from './question/PredictOutput.svelte';
-    import Raw from './question/Raw.svelte';
+	import Mcq from './question/MCQ.svelte';
+	import PredictOutput from './question/PredictOutput.svelte';
+	import Raw from './question/Raw.svelte';
 	import SelectInput from './SelectInput.svelte';
 	import TextInput from './TextInput.svelte';
-    import type { MultipleChoiceQuestion, PredictOutputQuestion, Question, QuestionType, RawQuestion } from './types/Exam';
+	import type {
+		MultipleChoiceQuestion,
+		PredictOutputQuestion,
+		Question,
+		QuestionType,
+		RawQuestion
+	} from './types/Exam';
 
 	export let examIdent: string;
 	export let onQuestionChanged: (newQ: any[]) => void;
@@ -19,32 +25,31 @@ import PredictOutput from './question/PredictOutput.svelte';
 		{ name: 'Raw', value: 'RawQuestion' }
 	];
 
+	let qtype: QuestionType = 'PredictOutputQuestion';
 
-	let qtype: QuestionType = "PredictOutputQuestion";
-
-	let rawQuestion: RawQuestion = {qtype: "RawQuestion", question: ""};
+	let rawQuestion: RawQuestion = { qtype: 'RawQuestion', question: '' };
 
 	let multipleChoiceQuestion: MultipleChoiceQuestion = {
-        qtype: "MultipleChoiceQuestion", 
+		qtype: 'MultipleChoiceQuestion',
 		question: '',
 		answers: [],
 		correct_id: 0
 	};
 
 	let predictOutputQuestion: PredictOutputQuestion = {
-        qtype: "PredictOutputQuestion",
+		qtype: 'PredictOutputQuestion',
 		question: '',
 		pre_run: '',
 		run: '',
 		post_run: '',
-		_code: [["",""]]
+		_code: [['', '']]
 	};
 
-    const qtypesToValues : Record<QuestionType, Question> = {
-        "RawQuestion": rawQuestion,
-        "MultipleChoiceQuestion": multipleChoiceQuestion,
-        "PredictOutputQuestion": predictOutputQuestion
-    };
+	const qtypesToValues: Record<QuestionType, Question> = {
+		RawQuestion: rawQuestion,
+		MultipleChoiceQuestion: multipleChoiceQuestion,
+		PredictOutputQuestion: predictOutputQuestion
+	};
 
 	async function addQuestion() {
 		try {
@@ -64,19 +69,37 @@ import PredictOutput from './question/PredictOutput.svelte';
 	<SelectInput id="question-type" items={qtypes} bind:value={qtype} label="Question type:" />
 
 	{#if qtype == 'RawQuestion'}
-        <!-- Creating raw q -->
-        <Raw isEditing onEdit={(r) => {qtypesToValues["RawQuestion"] = r; addQuestion();}} />
+		<!-- Creating raw q -->
+		<Raw
+			isEditing
+			onEdit={(r) => {
+				qtypesToValues['RawQuestion'] = r;
+				addQuestion();
+			}}
+		/>
 	{:else if qtype == 'MultipleChoiceQuestion'}
-		<Mcq isEditing onEdit={(m) => {qtypesToValues["MultipleChoiceQuestion"] = m; addQuestion();}} />
+		<Mcq
+			isEditing
+			onEdit={(m) => {
+				qtypesToValues['MultipleChoiceQuestion'] = m;
+				addQuestion();
+			}}
+		/>
 	{:else if qtype == 'PredictOutputQuestion'}
-		<PredictOutput isEditing onEdit={(m) => {qtypesToValues["PredictOutputQuestion"] = m; addQuestion();}} />
+		<PredictOutput
+			isEditing
+			onEdit={(m) => {
+				qtypesToValues['PredictOutputQuestion'] = m;
+				addQuestion();
+			}}
+		/>
 	{:else}
 		<p>unimplemented</p>
 	{/if}
 
-    {#if false}
-	<Button klazz="w-max ml-auto" disabled={qtypes[2].value == qtype} click={addQuestion}>
-		Add Question</Button
-	>
-    {/if}
+	{#if false}
+		<Button klazz="w-max ml-auto" disabled={qtypes[2].value == qtype} click={addQuestion}>
+			Add Question</Button
+		>
+	{/if}
 </form>

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-import Button from '$lib/Button.svelte';
-import ExamDetail from '$lib/exam/ExamDetail.svelte';
-import QuestionsList from '$lib/question/QuestionsList.svelte';
+	import Button from '$lib/Button.svelte';
+	import ExamDetail from '$lib/exam/ExamDetail.svelte';
+	import QuestionsList from '$lib/question/QuestionsList.svelte';
 	import { invoke, dialog } from '@tauri-apps/api';
 
 	export let { examIdent } = $page.params;
@@ -30,9 +30,9 @@ import QuestionsList from '$lib/question/QuestionsList.svelte';
 </script>
 
 {#if exam}
-    <ExamDetail {examIdent} examSchema={exam.exam_schema} />
+	<ExamDetail {examIdent} examSchema={exam.exam_schema} />
 
-<QuestionsList {exam} {examIdent} />
+	<QuestionsList {exam} {examIdent} />
 
 	<Button click={render}>Make Question PDF and answer PDF</Button>
 {/if}

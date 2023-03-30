@@ -80,16 +80,17 @@ impl Exam {
         )
     }
 
-    pub fn edit_exam_schema(&mut self, new_exam_schema: ExamSchema) -> Result<&mut Exam, ExamshError> {
+    pub fn edit_exam_schema(
+        &mut self,
+        new_exam_schema: ExamSchema,
+    ) -> Result<&mut Exam, ExamshError> {
         let mut examjson = self.exam_dir.clone();
         examjson.push("exam.json");
 
-        let mut f = match OpenOptions::new()
-            .write(true)
-            .open(&examjson) {
-                Ok(f) => f,
-                Err(_) => return Err(ExamshError::OpenFile(examjson))
-            };
+        let mut f = match OpenOptions::new().write(true).open(&examjson) {
+            Ok(f) => f,
+            Err(_) => return Err(ExamshError::OpenFile(examjson)),
+        };
 
         let ex = match serde_json::to_string_pretty(&new_exam_schema) {
             Err(_) => return Err(ExamshError::Unexpected("Unable to make exam schema".into())),
@@ -98,7 +99,7 @@ impl Exam {
 
         match write!(f, "{}", ex) {
             Ok(_) => {
-                self.exam_schema = new_exam_schema.clone();
+                self.exam_schema = new_exam_schema;
                 Ok(self)
             }
             Err(_) => Err(ExamshError::WriteFile(examjson)),

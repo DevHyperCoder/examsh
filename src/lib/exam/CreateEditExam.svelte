@@ -6,7 +6,7 @@
 	import Error from '$lib/Error.svelte';
 	import Input from '$lib/Input.svelte';
 	import TextInput from '$lib/TextInput.svelte';
-    import type { ExamSchema } from '$lib/types/ExamSchema';
+	import type { ExamSchema } from '$lib/types/ExamSchema';
 
 	async function createNewExam() {
 		const directory = await dialog.open({
@@ -35,16 +35,16 @@
 	async function editExam() {
 		try {
 			const val: [any, string] = await invoke('edit_exam_schema', {
-                examIdent: editingExamIdent,
+				examIdent: editingExamIdent,
 				examSchema
 			});
 
-            console.log("calling onEdit")
-            onEdit!(examSchema)
+			console.log('calling onEdit');
+			onEdit!(examSchema);
 
-            if(editingExamIdent != val[1]) {
-                goto(`/exam/${val[1]}`)
-            }
+			if (editingExamIdent != val[1]) {
+				goto(`/exam/${val[1]}`);
+			}
 			err = '';
 		} catch (e) {
 			err = e as any;
@@ -56,11 +56,11 @@
 		test_name: 'Example test',
 		instructions: 'Read all questions carefully',
 		marking_instructions: 'Mark properly',
-        date_fmt: null
+		date_fmt: null
 	};
 
-    export let editingExamIdent: string | null = null
-    export let onEdit: ((newEx: ExamSchema) => void) | null = null;
+	export let editingExamIdent: string | null = null;
+	export let onEdit: ((newEx: ExamSchema) => void) | null = null;
 
 	let err = '';
 </script>
@@ -96,9 +96,9 @@
 		bind:value={examSchema.marking_instructions}
 	/>
 
-	<Error err={err} />
+	<Error {err} />
 
-	<Button klazz="w-max ml-auto text-lg" click={
-            editingExamIdent ? editExam : createNewExam
-        }>{`${editingExamIdent? "Edit" : "Create new"} exam`}</Button>
+	<Button klazz="w-max ml-auto text-lg" click={editingExamIdent ? editExam : createNewExam}
+		>{`${editingExamIdent ? 'Edit' : 'Create new'} exam`}</Button
+	>
 </form>
