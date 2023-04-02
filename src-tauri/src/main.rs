@@ -36,6 +36,25 @@ fn render_exam(
 }
 
 #[tauri::command]
+fn edit_question(
+    exam_ident: String,
+    question: Question,
+    state: tauri::State<Arc<Mutex<LoadedExams>>>,
+) -> Result<Vec<Question>, ExamshError> {
+    let mut s = state.lock().unwrap();
+    let exam = s.loaded.get_mut(&exam_ident);
+    let exam = match exam {
+        None => return Err(ExamshError::NotInCache()),
+        Some(e) => e,
+    };
+
+    match exam.edit_question(question) {
+        Err(e) => Err(e),
+        Ok(exam) => Ok(exam.clone().get_questions().clone()),
+    }
+}
+
+#[tauri::command]
 fn add_question(
     exam_ident: String,
     question: Question,
@@ -179,6 +198,7 @@ fn main() {
             load_exam_with_ident,
             edit_exam_schema,
             add_question,
+            edit_question,
             render_exam
         ])
         .run(tauri::generate_context!())

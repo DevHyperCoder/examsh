@@ -6,42 +6,50 @@
 	import type { MultipleChoiceQuestion } from '$lib/types/Exam';
 
 	export let onEdit: (q: MultipleChoiceQuestion) => void;
-	export let q: MultipleChoiceQuestion = {
-		qtype: 'MultipleChoiceQuestion',
-		question: 'Example question',
-		answers: [],
-		correct_id: -1
-	};
+	export let q: MultipleChoiceQuestion;
 
 	export let isEditing = false;
 
 	let _newMCQ: string;
+	let makingNewAnswer = false;
 </script>
 
-<div>
+<div class="flex flex-col gap-3">
 	<Badge qtype="MultipleChoiceQuestion" />
 	{#if isEditing}
-		<label for="question">Question:</label>
-		<textarea id="question" bind:value={q.question} placeholder="Question" />
+		<div class="flex flex-col gap-2">
+			<label for="question">Question:</label>
+			<textarea id="question" bind:value={q.question} placeholder="Question" />
+		</div>
 
-		{#each q.answers as ans, i}
-			<Input
-				id={`answer-${i}`}
-				klazz={`${q.correct_id == i ? 'bold' : ''}`}
-				bind:value={ans}
-				placeholder="Answer for MCQ"
-				label={`Answer #${i + 1} ${q.correct_id == i ? '[CORRECT]' : ''}`}
-			/>
-			<Button click={() => (q.correct_id = i)}>Make Correct answer</Button>
-		{/each}
+		<div>
+			{#each q.answers as ans, i}
+				<div class="flex flex-col gap-2">
+					<Input
+						id={`answer-${i}`}
+						klazz={`${q.correct_id == i ? 'bold' : ''}`}
+						bind:value={ans}
+						placeholder="Answer for MCQ"
+						label={`Answer #${i + 1} ${q.correct_id == i ? '[CORRECT]' : ''}`}
+					/>
+					<Button click={() => (q.correct_id = i)}>Make Correct answer</Button>
+				</div>
+			{/each}
+		</div>
 
-		<input bind:value={_newMCQ} placeholder="New answer" />
-		<Button
-			click={() => {
-				q.answers = [...q.answers, _newMCQ];
-				_newMCQ = '';
-			}}>New answer</Button
-		>
+		{#if makingNewAnswer}
+			<div>
+				<Input label="New answer" id="new-answer" bind:value={_newMCQ} placeholder="New answer" />
+				<Button
+					click={() => {
+						q.answers = [...q.answers, _newMCQ];
+						_newMCQ = '';
+					}}>New answer</Button
+				>
+			</div>
+		{:else}
+			<Button click={() => (makingNewAnswer = true)}>Add new option</Button>
+		{/if}
 
 		<Button
 			click={() => {

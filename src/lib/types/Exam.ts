@@ -10,6 +10,7 @@ export type QuestionType = 'PredictOutputQuestion' | 'MultipleChoiceQuestion' | 
 
 export interface MultipleChoiceQuestion {
 	qtype: 'MultipleChoiceQuestion';
+	question_id: string;
 	answers: string[];
 	question: string;
 	correct_id: number;
@@ -17,11 +18,13 @@ export interface MultipleChoiceQuestion {
 
 export interface RawQuestion {
 	qtype: 'RawQuestion';
+	question_id: string;
 	question: string;
 }
 
 export interface PredictOutputQuestion {
 	qtype: 'PredictOutputQuestion';
+	question_id: string;
 	question: string;
 	pre_run: string;
 	run: string;

@@ -26,13 +26,27 @@ impl Question {
             Question::WriteCodeQuestion(wc) => wc.render(),
         }
     }
+
+    pub fn get_question_id(&self) -> String {
+        match self {
+            Question::RawQuestion(r) => r.get_id(),
+            Question::PredictOutputQuestion(pto) => pto.get_id(),
+            Question::MultipleChoiceQuestion(mcq) => mcq.get_id(),
+            Question::WriteCodeQuestion(wc) => wc.get_id(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Raw {
     question: String,
+    question_id: String,
 }
 impl Raw {
+    pub fn get_id(&self) -> String {
+        self.question_id.to_owned()
+    }
+
     pub fn render(&self) -> String {
         format!(
             "\\question

@@ -29,13 +29,15 @@
 	}
 </script>
 
-{#if exam}
-	<ExamDetail {examIdent} examSchema={exam.exam_schema} />
+<section class="w-1/2 mx-auto flex flex-col gap-5">
+	{#if exam}
+		<ExamDetail {examIdent} examSchema={exam.exam_schema} />
 
-	<QuestionsList {exam} {examIdent} />
+		<QuestionsList {exam} {examIdent} />
 
-	<Button click={render}>Make Question PDF and answer PDF</Button>
-{/if}
+		<Button click={render}>Make Question PDF and answer PDF</Button>
+	{/if}
 
-<p>{err}</p>
-<a href="../">go back</a>
+	<p>{err}</p>
+	<a href="../">go back</a>
+</section>

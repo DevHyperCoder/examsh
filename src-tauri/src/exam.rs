@@ -6,7 +6,6 @@ use std::{
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::{errors::ExamshError, questions::Question, utils::render_latex};
 
@@ -38,6 +37,30 @@ impl Exam {
     pub fn get_questions(&self) -> &Vec<Question> {
         &self.questions
     }
+
+    // This method does not expect the question_id to change. If the question id changes, the file
+    // should be renamed otherwise there would be a data inconsistency
+    pub fn edit_question(&mut self, q: Question) -> Result<&mut Exam, ExamshError> {
+        let mut q_path = self.exam_dir.clone();
+        q_path.push("questions");
+        q_path.push(format!("examsh-{}.json", q.get_question_id()));
+
+        if !q_path.exists() || q_path.is_dir() {
+            return Err(ExamshError::Unexpected("Could not find question".into()));
+        }
+
+        match OpenOptions::new().truncate(true).write(true).open(&q_path) {
+            Ok(mut f) => match serde_json::to_string_pretty(&q) {
+                Ok(c) => match write!(f, "{}", c) {
+                    Ok(_) => Ok(self),
+                    Err(_) => Err(ExamshError::WriteFile(q_path)),
+                },
+                Err(_) => Err(ExamshError::Unexpected("Unable to make question".into())),
+            },
+            Err(_) => Err(ExamshError::OpenFile(q_path)),
+        }
+    }
+
     pub fn add_question(&mut self, q: Question) -> Result<&mut Exam, ExamshError> {
         let question: Question = match q {
             Question::PredictOutputQuestion(mut predict) => {
@@ -52,7 +75,7 @@ impl Exam {
 
         let mut newf = self.exam_dir.clone();
         newf.push("questions");
-        newf.push(format!("examsh-{}.json", Uuid::new_v4()));
+        newf.push(format!("examsh-{}.json", question.get_question_id()));
 
         let mut f = match OpenOptions::new().create(true).write(true).open(&newf) {
             Err(_) => {
@@ -75,7 +98,7 @@ impl Exam {
     }
     pub fn get_identifier(&self) -> String {
         format!(
-            "{}${}",
+            "{}_{}",
             self.exam_schema.course_name, self.exam_schema.test_name
         )
     }

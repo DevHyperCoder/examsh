@@ -6,12 +6,12 @@
 	import type { RawQuestion } from '$lib/types/Exam';
 
 	export let onEdit: (q: RawQuestion) => void;
-	export let q: RawQuestion = { qtype: 'RawQuestion', question: 'Example question' };
+	export let q: RawQuestion;
 
 	export let isEditing = false;
 </script>
 
-<div>
+<div class="flex flex-col gap-3">
 	<Badge qtype="RawQuestion" />
 	{#if isEditing}
 		<p><b>Note:</b>Use pure LaTeX to write your question.</p>

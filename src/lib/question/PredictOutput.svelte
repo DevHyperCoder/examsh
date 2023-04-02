@@ -7,17 +7,7 @@
 	import type { PredictOutputQuestion } from '$lib/types/Exam';
 
 	export let onEdit: (q: PredictOutputQuestion) => void;
-	export let q: PredictOutputQuestion = {
-		qtype: 'PredictOutputQuestion',
-		question: 'Example question',
-		pre_run: '',
-		run: '',
-		post_run: '',
-		_code: [
-			['', ''],
-			['', '']
-		]
-	};
+	export let q: PredictOutputQuestion;
 
 	export let isEditing = false;
 </script>

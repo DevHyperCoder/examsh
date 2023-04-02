@@ -33,22 +33,24 @@
 	let showingCreate = false;
 </script>
 
-<h1>Welcome to examsh</h1>
+<section class="w-1/2 mx-auto flex flex-col gap-5">
+	<h1>Welcome to examsh</h1>
 
-<button
-	class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
-	on:click={async () => {
-		showingCreate = false;
-		await loadExam();
-	}}>Load existing exam</button
->
-<button
-	class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
-	on:click={() => (showingCreate = true)}>Create new exam</button
->
+	<button
+		class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
+		on:click={async () => {
+			showingCreate = false;
+			await loadExam();
+		}}>Load existing exam</button
+	>
+	<button
+		class="px-6 py-12 bg-blue-100 hover:text-white hover:bg-blue-400 font-bold text-xl"
+		on:click={() => (showingCreate = true)}>Create new exam</button
+	>
 
-<Error {err} />
+	<Error {err} />
 
-{#if showingCreate}
-	<CreateEditExam />
-{/if}
+	{#if showingCreate}
+		<CreateEditExam />
+	{/if}
+</section>

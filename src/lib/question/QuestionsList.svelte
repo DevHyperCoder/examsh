@@ -26,27 +26,31 @@
 	export let exam: Exam;
 </script>
 
-<h2>Questions</h2>
+<h1 class="text-2xl font-bold text-stone-800 mb-3 text-center">Questions</h1>
 {#each exam.questions as q, i}
-	{#if q.qtype == 'MultipleChoiceQuestion'}
-		<Mcq onEdit={async (newq) => editQuestion(newq, i)} {q} />
-	{:else if q.qtype == 'RawQuestion'}
-		<Raw onEdit={async (newq) => editQuestion(newq, i)} {q} />
-	{:else if q.qtype == 'PredictOutputQuestion'}
-		<PredictOutput onEdit={async (newq) => editQuestion(newq, i)} {q} />
-	{/if}
+	<div class="border-double border-left border-l-4 border-sky-500 pl-4">
+		{#if q.qtype == 'MultipleChoiceQuestion'}
+			<Mcq onEdit={async (newq) => editQuestion(newq, i)} {q} />
+		{:else if q.qtype == 'RawQuestion'}
+			<Raw onEdit={async (newq) => editQuestion(newq, i)} {q} />
+		{:else if q.qtype == 'PredictOutputQuestion'}
+			<PredictOutput onEdit={async (newq) => editQuestion(newq, i)} {q} />
+		{/if}
+	</div>
 {:else}
 	<Error err={'No questions present'} />
 {/each}
 
 {#if creatingQuestion}
 	<CreateQuestion
+		newQuestionNumber={exam.questions.length + 1}
 		onQuestionChanged={(qs) => {
 			exam.questions = qs;
 			creatingQuestion = false;
 		}}
 		{examIdent}
 	/>
+	<Button klazz="bg-red-500" click={() => (creatingQuestion = false)}>Cancel</Button>
 {:else}
 	<Button click={() => (creatingQuestion = true)}>Create new question</Button>
 {/if}

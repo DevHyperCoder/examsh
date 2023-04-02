@@ -17,6 +17,7 @@
 
 	export let examIdent: string;
 	export let onQuestionChanged: (newQ: any[]) => void;
+	export let newQuestionNumber: number;
 
 	const qtypes = [
 		{ name: 'Predict Output', value: 'PredictOutputQuestion' },
@@ -65,13 +66,18 @@
 	}
 </script>
 
-<form class="w-1/2 mx-auto flex flex-col gap-3">
+<form class="flex flex-col gap-3">
 	<SelectInput id="question-type" items={qtypes} bind:value={qtype} label="Question type:" />
 
 	{#if qtype == 'RawQuestion'}
 		<!-- Creating raw q -->
 		<Raw
 			isEditing
+			q={{
+				qtype: 'RawQuestion',
+				question_id: newQuestionNumber.toString(),
+				question: 'Example question'
+			}}
 			onEdit={(r) => {
 				qtypesToValues['RawQuestion'] = r;
 				addQuestion();
@@ -80,6 +86,13 @@
 	{:else if qtype == 'MultipleChoiceQuestion'}
 		<Mcq
 			isEditing
+			q={{
+				qtype: 'MultipleChoiceQuestion',
+				question_id: newQuestionNumber.toString(),
+				question: 'Example question',
+				answers: [],
+				correct_id: -1
+			}}
 			onEdit={(m) => {
 				qtypesToValues['MultipleChoiceQuestion'] = m;
 				addQuestion();
@@ -87,6 +100,15 @@
 		/>
 	{:else if qtype == 'PredictOutputQuestion'}
 		<PredictOutput
+			q={{
+				qtype: 'PredictOutputQuestion',
+				question_id: newQuestionNumber.toString(),
+				question: 'Example question',
+				pre_run: '',
+				run: '',
+				post_run: '',
+				_code: [['', '']]
+			}}
 			isEditing
 			onEdit={(m) => {
 				qtypesToValues['PredictOutputQuestion'] = m;

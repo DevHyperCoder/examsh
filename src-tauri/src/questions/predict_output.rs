@@ -20,9 +20,14 @@ pub struct PredictOutput {
 
     #[serde(skip)]
     pub code: Vec<(String, String)>,
+
+    pub question_id: String,
 }
 
 impl PredictOutput {
+    pub fn get_id(&self) -> String {
+        self.question_id.to_owned()
+    }
     pub fn parse_code(&mut self, questions_path: &Path) {
         let codes = self
             ._code

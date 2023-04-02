@@ -5,9 +5,15 @@ use serde::{Deserialize, Serialize};
 pub struct WriteCode {
     question: String,
     output: String,
+
+    question_id: String,
 }
 
 impl WriteCode {
+    pub fn get_id(&self) -> String {
+        self.question_id.to_owned()
+    }
+
     pub fn render(&self) -> String {
         format!(
             "

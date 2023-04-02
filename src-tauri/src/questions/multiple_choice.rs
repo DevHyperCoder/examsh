@@ -5,9 +5,15 @@ pub struct MultipleChoiceQuestions {
     pub question: String,
     pub answers: Vec<String>,
     pub correct_id: usize,
+
+    pub question_id: String,
 }
 
 impl MultipleChoiceQuestions {
+    pub fn get_id(&self) -> String {
+        self.question_id.to_owned()
+    }
+
     pub fn render(&self) -> String {
         let choices = self
             .answers

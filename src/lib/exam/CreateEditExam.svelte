@@ -65,9 +65,11 @@
 	let err = '';
 </script>
 
-<h1 class="text-center text-2xl font-bold text-stone-800 mb-3">Create new exam</h1>
+<h1 class="text-center text-2xl font-bold text-stone-800 mb-3">
+	{editingExamIdent ? 'Edit' : 'Create new'} exam
+</h1>
 
-<form class="w-1/2 mx-auto flex flex-col gap-3">
+<form class="flex flex-col gap-3">
 	<Input
 		label="Course name:"
 		id="course-name"
