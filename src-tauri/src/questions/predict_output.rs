@@ -53,12 +53,14 @@ impl PredictOutput {
         temp_dir.push(format!("examsh-{}", Utc::now()));
         std::fs::create_dir(&temp_dir).expect("Unable to create temp directory");
 
+        println!("{:?}", &self.code);
         let code = &self
             .code
             .iter()
             .map(|(fname, code)| {
                 let mut asdf = temp_dir.clone();
                 asdf.push(fname);
+                println!("{}", asdf.display());
                 let mut f = OpenOptions::new()
                     .create(true)
                     .write(true)

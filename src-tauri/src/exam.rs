@@ -49,8 +49,19 @@ impl Exam {
             return Err(ExamshError::Unexpected("Could not find question".into()));
         }
 
+        let question: Question = match q {
+            Question::PredictOutputQuestion(mut predict) => {
+                let mut newf = self.exam_dir.clone();
+                newf.push("questions");
+                predict.parse_code(&newf);
+                Question::PredictOutputQuestion(predict)
+            }
+
+            _ => q,
+        };
+
         match OpenOptions::new().truncate(true).write(true).open(&q_path) {
-            Ok(mut f) => match serde_json::to_string_pretty(&q) {
+            Ok(mut f) => match serde_json::to_string_pretty(&question) {
                 Ok(c) => match write!(f, "{}", c) {
                     Ok(_) => Ok(self),
                     Err(_) => Err(ExamshError::WriteFile(q_path)),
@@ -251,6 +262,8 @@ impl Exam {
             };
             questions.push(question);
         }
+
+        questions.sort_by_key(|a| a.get_question_id());
 
         let mut exam_dir = fname;
         exam_dir.pop();
